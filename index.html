@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Spotify Queue Manager</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #282828;
+            color: white;
+        }
+
+        #logo {
+            width: 300px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        #description {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 18px;
+            max-width: 600px;
+        }
+
+        #search-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            width: 300px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input {
+            background-color: #fff;
+            color: #000;
+        }
+
+        button {
+          background: linear-gradient(45deg, #1DB954, #1ED760);
+          color: #ffffff;
+          cursor: pointer;
+          transition: background-color 0.3s, transform 0.3s;
+          font-weight: bold;
+          border: none;
+          border-radius: 4px;
+        }
+
+        button:hover {
+          background: linear-gradient(45deg, #1ED760, #1DB954);
+          transform: scale(1.05);
+        }
+
+
+        #results {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            list-style-type: none;
+            max-width: 1000px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .result-item {
+            background-color: #333;
+            margin: 10px;
+            padding: 10px;
+            width: 200px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            text-align: center;
+        }
+
+        .result-item:hover {
+            background-color: #444;
+            transform: scale(1.05);
+        }
+
+        .result-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+
+        .result-item h2 {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 0 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .result-item p {
+            font-size: 14px;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 768px) {
+            #results {
+                flex-direction: column;
+            }
+
+            .result-item {
+                width: 90%;
+                max-width: 300px;
+            }
+        }
+
+        footer {
+            position: fixed;
+            bottom: 10px;
+            text-align: center;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        footer a {
+            color: #1DB954;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <img id="logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png" alt="Spotify logo">
+
+<div id="description">
+    <strong>Welcome! 🔥</strong><br>Find the tracks that heat up the atmosphere and ignite your party with a click!
+</div>
+  
+    <div id="search-container">
+        <input type="text" id="song-query" placeholder="Search for your song...">
+        <button id="search-btn">Search</button>
+    </div>
+    <ul id="results">
+    </ul>
+
+    <footer>
+        Developed by <a href="https://senioxtreme.it" target="_blank">Senioxtreme</a>
+    </footer>
+
+
+<script>
+    const script = document.createElement('script');
+    script.src = 'script.js?v=' + new Date().getTime();
+    document.head.appendChild(script);
+</script>
+
+</body>
+</html>
