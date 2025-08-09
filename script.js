@@ -1,4 +1,4 @@
-let accessToken = 'BQBV_PpQ4O49f-jtGexn-zNMdwcKy_eKfhpqIuANBCcpOGhDkByOAwHIgsrBHQfMuYkx4cUOXvIr_e2-8TDJKfK6RN9tXG88MNJzG9V0Xprnx9HhA5ol88fdQX3vWjREZhCss8-0paVRRfoyU_BYEBrnh9M4bkovsHRnR7Brts-lh3h0acC80ggfao7ry0psb7GPTOlAww1r5ULGyp4sDCjrZ36CAKmIPJtp_5UcI5BORbYRERy2OvXCqkSWmc14fenxkefuTPiCqOTUFPn3980DQyX5-nqPT1kB-dwMgvVO2aF7dw';
+let accessToken = 'spotify_token-here';
 
 const ADD_LIMIT = 3;
 const TIME_LIMIT_MINUTES = 10;
