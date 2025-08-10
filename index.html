@@ -6,7 +6,6 @@
   <meta name="theme-color" content="#121212" />
   <title>Spotify Song Queue</title>
   <style>
-
     *,*::before,*::after{box-sizing:border-box}
     html,body{height:100%}
     body{
@@ -51,7 +50,7 @@
     .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:transform .18s ease, box-shadow .18s ease;position:relative}
     .card:hover{transform:translateY(-2px)}
     .cover{position:relative;aspect-ratio:1/1;overflow:hidden}
-    .cover img{width:100%;height:100%;object-fit:cover}
+    .cover img{width:100%;height:100%;object-fit:cover;transform-origin:center}
     .info{padding:8px 10px}
     .title{font-size:14px;font-weight:800;white-space:normal;overflow-wrap:break-word}
     .meta{font-size:12px;color:var(--muted);white-space:normal;overflow-wrap:break-word}
@@ -82,8 +81,19 @@
     @keyframes ring{0%{box-shadow:0 0 0 0 rgba(29,185,84,.65)}100%{box-shadow:0 0 0 14px rgba(29,185,84,0)}}
     .card.added{animation:ring .75s ease-out}
     .added-badge{position:absolute;bottom:8px;right:8px;background:linear-gradient(45deg,var(--brand),var(--brand-2));color:#fff;padding:6px 8px;border-radius:999px;font-size:12px;font-weight:800;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+    @keyframes cover-bump{0%{transform:scale(1)}60%{transform:scale(1.05)}100%{transform:scale(1)}}
+    .cover.bump img{animation:cover-bump .45s ease-out}
 
     .confetti{position:fixed;pointer-events:none;inset:0;z-index:998}
+
+    /* Modal embed preview */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:1000}
+    .modal.show{display:flex}
+    .modal-card{width:min(520px,90vw);background:#181818;border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .modal-title{font-weight:800}
+    .modal-body{padding:0}
+    .modal-close{background:#262626;border:1px solid rgba(255,255,255,.08);color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
 
     footer{margin-top:auto;padding:12px;text-align:center;color:#b3b3b3;font-size:12px}
     footer a{color:var(--brand);text-decoration:none}
@@ -122,10 +132,23 @@
 
   <footer>Developed by <a href="https://senioxtreme.it" target="_blank" rel="noreferrer noopener">Senioxtreme</a></footer>
 
-  <!-- Toast -->
   <div id="toast" class="toast" role="status" aria-live="polite"><span class="icon">✓</span><span id="toast-text"></span></div>
-  <!-- Confetti canvas -->
   <canvas id="confetti" class="confetti"></canvas>
+
+  <!-- Modal embed -->
+  <div id="embed-modal" class="modal" aria-hidden="true" role="dialog" aria-label="Track preview">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title">Track preview</div>
+        <button id="embed-close" class="modal-close">Close</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="embed-frame" style="border:none;width:100%;height:152px"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
 
   <script>
     (function hardOverrideDialogs(){
@@ -134,7 +157,7 @@
         const txt=document.getElementById('toast-text');
         if(!t||!txt) return;
         const m=(msg==null?'':String(msg));
-        const isErr=/error|slow|limit|riprov|problem|no active device|valid search term/i.test(m);
+        const isErr=/error|slow|limit|riprov|problem|no active device|valid search term|device/i.test(m);
         const icon=t.querySelector('.icon');
         if(icon) icon.textContent = isErr ? '⚠' : '✓';
         t.classList.toggle('error', isErr);
@@ -175,8 +198,17 @@
       const confetti=document.getElementById('confetti');
       const ctx=confetti.getContext('2d');
 
+      const audio = new Audio();
+      let currentPreviewBtn = null;
+
+      const modal = document.getElementById('embed-modal');
+      const embedFrame = document.getElementById('embed-frame');
+      const embedClose = document.getElementById('embed-close');
+
       document.getElementById('home-link').addEventListener('click',(e)=>{
         e.preventDefault();
+        stopPreview();
+        closeEmbed();
         q.value=''; results.innerHTML=''; setState('empty'); window.scrollTo({top:0,behavior:'smooth'});
       });
 
@@ -211,7 +243,7 @@
 
       function renderQueue(){
         const all=loadQueue();
-        const last5=all.slice(0,5); 
+        const last5=all.slice(0,5);
         histCount.textContent = all.length ? `(${Math.min(all.length,5)}/${all.length})` : '';
         userQueue.innerHTML='';
         const frag=document.createDocumentFragment();
@@ -229,11 +261,52 @@
       }
 
       clearBtn.addEventListener('click', ()=>{
+        stopPreview();
+        closeEmbed();
         localStorage.removeItem('userQueue');
-        localStorage.removeItem('addHistory'); 
+        localStorage.removeItem('addHistory');
         renderQueue();
         showPopup('History cleared');
       });
+
+      function stopPreview(){
+        try{ audio.pause(); audio.currentTime=0; }catch{}
+        if(currentPreviewBtn){ currentPreviewBtn.textContent='Preview'; currentPreviewBtn.dataset.playing='false'; currentPreviewBtn=null; }
+      }
+
+      function openEmbedForUri(uri){
+        const id = (uri||'').split(':')[2] || '';
+        if(!id){ showPopup('Preview not available for this track.'); return; }
+        stopPreview();
+        embedFrame.src = `https://open.spotify.com/embed/track/${encodeURIComponent(id)}?utm_source=generator`;
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden','false');
+      }
+      function closeEmbed(){
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden','true');
+        embedFrame.src = '';
+      }
+      embedClose.addEventListener('click', closeEmbed);
+      modal.addEventListener('click', (e)=>{ if(e.target===modal) closeEmbed(); });
+
+      function togglePreview(btn, url, uri){
+        if(url){
+          if(btn===currentPreviewBtn && btn?.dataset.playing==='true'){
+            stopPreview(); return;
+          }
+          stopPreview();
+          audio.src=url;
+          audio.play().then(()=>{
+            btn.textContent='Stop';
+            btn.dataset.playing='true';
+            currentPreviewBtn=btn;
+          }).catch(()=> showPopup('Cannot play preview. Check your browser audio permissions.'));
+        } else {
+          openEmbedForUri(uri);
+        }
+      }
+      audio.addEventListener('ended', stopPreview);
 
       window.UIBridge={
         showLoading:()=>setState('loading'),
@@ -253,13 +326,27 @@
                 <div class="meta">${it.subtitle||''}</div>
               </div>
               <div class="row">
+                <button class="btn small ghost" data-act="preview">${it.preview ? 'Preview' : 'Preview'}</button>
                 <button class="btn small" data-act="queue">Add to queue</button>
               </div>`;
-            li.querySelector('[data-act="queue"]').addEventListener('click',()=>{
 
+            const previewBtn = li.querySelector('[data-act="preview"]');
+            previewBtn.addEventListener('click', ()=> togglePreview(previewBtn, it.preview, it.uri));
+
+            const queueBtn = li.querySelector('[data-act="queue"]');
+            queueBtn.addEventListener('click', async ()=>{
               if(typeof window.canAddTrack==='function' && !window.canAddTrack()) return;
 
-              if(typeof it.onclick==='function') it.onclick();
+              queueBtn.disabled = true;
+              let ok = false;
+              if(typeof window.addToQueue === 'function' && it.uri){
+                ok = await window.addToQueue(it.uri);
+              } else if(typeof it.onclick === 'function'){
+                try{ const res = it.onclick(); ok = res instanceof Promise ? await res : !!res; }catch{ ok=false; }
+              }
+              queueBtn.disabled = false;
+
+              if(!ok) return;
 
               const data=loadQueue();
               data.unshift({title:it.title,subtitle:it.subtitle,img:it.image});
@@ -270,6 +357,8 @@
 
               const cover=li.querySelector('.cover');
               if(cover){
+                cover.classList.add('bump');
+                setTimeout(()=>cover.classList.remove('bump'),500);
                 const badge=document.createElement('div');badge.className='added-badge';badge.textContent='Queued ✓';
                 cover.appendChild(badge); setTimeout(()=>badge.remove(),1200);
               }
@@ -279,6 +368,7 @@
 
               results.innerHTML=''; q.value=''; setState('empty'); window.scrollTo({top:0,behavior:'smooth'});
             });
+
             frag.appendChild(li);
           });
           results.appendChild(frag);decideLayout();
@@ -289,23 +379,11 @@
 
       results.addEventListener('click',(e)=>{
         const li=e.target.closest('.result-item'); if(!li) return;
-        if(typeof window.canAddTrack==='function' && !window.canAddTrack()) return;
-
-        const title=li.querySelector('h2')?.textContent?.trim()||'';
-        const sub=li.querySelector('p')?.textContent?.trim()||'';
-        const img=li.querySelector('img')?.src||'';
-        const data=loadQueue(); data.unshift({title,subtitle:sub,img}); saveQueue(data); renderQueue();
-
-        try{li.style.position=li.style.position||'relative';}catch{}
-        const b=document.createElement('div'); b.className='added-badge'; b.textContent='Queued ✓';
-        li.appendChild(b); setTimeout(()=>b.remove(),1200);
-        li.classList.add('added'); setTimeout(()=>li.classList.remove('added'),800);
-        showPopup('Added: '+title); fireConfetti();
-
-        results.innerHTML=''; q.value=''; setState('empty'); window.scrollTo({top:0,behavior:'smooth'});
+        showPopup('Please use the new UI results.');
       });
 
       function triggerSearch(){
+        stopPreview(); closeEmbed();
         const term=q.value.trim(); if(!term){showPopup('Please enter a valid search term.'); return;}
         setState('loading'); document.dispatchEvent(new CustomEvent('ui:search',{detail:{query:term,limit:10}}));
       }
