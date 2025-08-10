@@ -1,62 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Song limit reset</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #282828;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#121212" />
+  <title>Song Limit Reset</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{height:100%}
+    :root{
+      --panel:#181818;--panel-2:#202020;--muted:#b3b3b3;--brand:#1DB954;--brand-2:#1ED760;--radius:16px;--shadow:0 12px 40px rgba(0,0,0,.35)
+    }
+    body{
+      margin:0;line-height:1.5;-webkit-font-smoothing:antialiased;
+      min-height:100svh;display:flex;flex-direction:column;color:#fafafa;
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(29,185,84,.18), rgba(29,185,84,0) 60%),
+        radial-gradient(800px 400px at 110% 0%, rgba(30,215,96,.12), rgba(30,215,96,0) 60%),
+        linear-gradient(180deg,#0e0e0e 0%, #121212 35%, #0f1f15 100%);
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial
+    }
+    .container{width:100%;max-width:900px;margin:0 auto;padding:10px}
+    header.appbar{position:sticky;top:0;z-index:50;backdrop-filter:saturate(140%) blur(8px);background:linear-gradient(to bottom, rgba(18,18,18,.95), rgba(18,18,18,.7));border-bottom:1px solid rgba(255,255,255,.06)}
+    .appbar-inner{display:flex;gap:10px;align-items:center;padding:8px 10px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:8px;text-decoration:none}
+    .brand img{width:32px;height:32px;cursor:pointer}
+    .brand span{font-weight:900;letter-spacing:.2px;font-size:14px;color:#eaeaea}
 
-        h1 {
-            color: #1DB954;
-        }
+    main{flex:1;display:grid;place-items:center;padding:16px}
+    .card{width:min(680px,96vw);background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .head{padding:14px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .head h1{margin:0;font-size:16px}
+    .body{padding:16px}
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .btn{border:none;border-radius:12px;padding:12px 16px;background:linear-gradient(45deg,var(--brand),var(--brand-2));color:#0a0a0a;font-weight:900;cursor:pointer;transition:transform .15s ease,opacity .2s ease}
+    .btn:hover{transform:translateY(-1px);opacity:.95}
+    .btn.ghost{background:#1b1b1b;color:#eaeaea;border:1px solid rgba(255,255,255,.1)}
+    .stat{margin-top:12px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:#151515}
+    .kpi{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+    .pill{background:#121212;border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:6px 10px;font-size:12px;color:#ddd}
 
-        button {
-            background-color: #ff4500;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 15px 30px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.3s;
-        }
+    .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(120%);background:#1b1b1b;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:10px 14px;z-index:999;box-shadow:var(--shadow);display:flex;gap:8px;align-items:center;opacity:0;transition:transform .25s ease, opacity .25s ease}
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+    .toast.error{background:#2a1717;border-color:rgba(255,80,80,.35)}
+    .toast .icon{font-weight:900}
 
-        button:hover {
-            background-color: #ff6347;
-            transform: scale(1.05);
-        }
+    .confetti{position:fixed;pointer-events:none;inset:0;z-index:998}
 
-        p {
-            margin-top: 20px;
-        }
-    </style>
+    footer{margin-top:auto;padding:12px;text-align:center;color:#b3b3b3;font-size:12px}
+    footer a{color:var(--brand);text-decoration:none}
+  </style>
 </head>
 <body>
-    <h1>Reset the limit on your device</h1>
-    <p>Press the button to reset the song addition limit on the current device.</p>
-    <button id="reset-btn">Reset</button>
-    <p id="status-message"></p>
+  <header class="appbar">
+    <div class="appbar-inner container">
+      <a class="brand" href="/" aria-label="Home">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png" alt="Spotify" />
+        <span>Spotify Song Queue</span>
+      </a>
+    </div>
+  </header>
 
-    <script>
-        const resetBtn = document.getElementById('reset-btn');
-        const statusMessage = document.getElementById('status-message');
+  <main>
+    <section class="card">
+      <div class="head">
+        <h1>Song limit reset</h1>
+        <span class="muted" id="since-label"></span>
+      </div>
+      <div class="body">
+        <p class="muted">Reset the local anti-spam limit on <b>this device/browser</b> (3 songs / 10 minutes).</p>
 
-        resetBtn.addEventListener('click', () => {
-            localStorage.removeItem('addHistory');
-            statusMessage.textContent = 'Limite di aggiunta brani resettato con successo!';
-            console.log('Limite di aggiunta brani resettato.');
-        });
-    </script>
+        <div class="row" style="margin:12px 0">
+          <button id="reset-btn" class="btn">Reset limit</button>
+          <button id="back-btn" class="btn ghost">Back to app</button>
+        </div>
+
+        <div class="stat">
+          <div><b>Status</b></div>
+          <div id="status-message" class="muted">Ready.</div>
+          <div class="kpi">
+            <span class="pill" id="kpi-remaining">Remaining: —</span>
+            <span class="pill" id="kpi-window">Window: 10 min</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Developed by <a href="https://senioxtreme.it" target="_blank" rel="noreferrer noopener">Senioxtreme</a></footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"><span class="icon">✓</span><span id="toast-text"></span></div>
+  <canvas id="confetti" class="confetti"></canvas>
+
+  <script>
+    (function(){
+      const ADD_LIMIT = 3;
+      const TIME_LIMIT_MINUTES = 10;
+
+      const statusMsg = document.getElementById('status-message');
+      const kpiRem = document.getElementById('kpi-remaining');
+      const sinceLabel = document.getElementById('since-label');
+      const resetBtn = document.getElementById('reset-btn');
+      const backBtn = document.getElementById('back-btn');
+
+      const confetti = document.getElementById('confetti');
+      const ctx = confetti.getContext('2d');
+
+      function htmlToast(msg, isErr=false, dur=2200){
+        const t=document.getElementById('toast');
+        const txt=document.getElementById('toast-text');
+        const icon=t.querySelector('.icon');
+        icon.textContent = isErr ? '⚠' : '✓';
+        t.classList.toggle('error', isErr);
+        txt.textContent = msg || '';
+        t.classList.add('show');
+        clearTimeout(htmlToast._t);
+        htmlToast._t = setTimeout(()=> t.classList.remove('show'), dur);
+      }
+
+      function fireConfetti(){
+        const W=confetti.width=window.innerWidth, H=confetti.height=window.innerHeight;
+        const pieces=Array.from({length:18},()=>({x:Math.random()*W,y:-10,vy:2+Math.random()*3,vx:(Math.random()-.5)*2,s:3+Math.random()*4}));
+        let t=0; cancelAnimationFrame(fireConfetti._r);
+        (function loop(){
+          t++; ctx.clearRect(0,0,W,H);
+          pieces.forEach(p=>{p.x+=p.vx; p.y+=p.vy; ctx.fillStyle=`hsl(${(t*6+p.x)%360} 80% 60%)`; ctx.fillRect(p.x,p.y,p.s,p.s*1.6);});
+          if(t<40) fireConfetti._r=requestAnimationFrame(loop); else ctx.clearRect(0,0,W,H);
+        })();
+      }
+
+      function loadHistory(){
+        try{ return JSON.parse(localStorage.getItem('addHistory')||'[]'); }catch{ return []; }
+      }
+      function secsAgo(ts){ return Math.floor((Date.now()-ts)/1000); }
+      function fmtSince(sec){
+        if(!sec || sec<1) return 'just now';
+        if(sec<60) return `${sec}s ago`;
+        const m = Math.floor(sec/60), s = sec%60;
+        return `${m}m ${s}s ago`;
+      }
+
+      function computeRemaining(){
+        const now = Date.now();
+        const hist = loadHistory();
+        const recent = hist.filter(ts => now - ts < TIME_LIMIT_MINUTES*60*1000);
+        const remaining = Math.max(0, ADD_LIMIT - recent.length);
+        return { remaining, recent, last: recent[recent.length-1] || hist[hist.length-1] || null };
+      }
+
+      function refreshUI(){
+        const {remaining, last} = computeRemaining();
+        kpiRem.textContent = `Remaining: ${remaining}/${ADD_LIMIT}`;
+        sinceLabel.textContent = last ? `Last add: ${fmtSince(secsAgo(last))}` : 'No adds in window';
+      }
+
+      resetBtn.addEventListener('click', ()=>{
+        try{
+          localStorage.removeItem('addHistory');
+          statusMsg.textContent = 'Limit successfully reset on this device.';
+          htmlToast('Limit reset ✓', false, 2600);
+          fireConfetti();
+          refreshUI();
+        }catch(e){
+          statusMsg.textContent = 'Could not reset the limit (storage error).';
+          htmlToast('Storage error: cannot reset', true, 3000);
+        }
+      });
+
+      backBtn.addEventListener('click', ()=>{
+        window.location.href = '/';
+      });
+
+      // Keyboard: Enter triggers reset
+      window.addEventListener('keydown',(e)=>{
+        if(e.key==='Enter') resetBtn.click();
+      });
+
+      refreshUI();
+      statusMsg.textContent = 'Ready.';
+    })();
+  </script>
 </body>
 </html>
