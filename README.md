@@ -1,68 +1,83 @@
-## Introduction
+# 🎵 Spotify Queue Manager
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)  ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)  ![JavaScript](https://img.shields.io/badge/JavaScript-323330?logo=javascript&logoColor=F7DF1E)  ![Spotify Web API](https://img.shields.io/badge/Spotify%20API-1DB954?logo=spotify&logoColor=white)  
+> A modern web app to search, preview, and queue Spotify tracks seamlessly.  
+> Designed for events, parties, and collaborative playlists.
+---
 
-This guide will walk you through the steps to use the Spotify Queue Manager. This web application allows users to search for songs and add them to a predefined Spotify account's queue, making it easy to manage the music at events or gatherings.
+## 🚀 Features
 
-## Prerequisites
+- **Track Search** — Search any song, artist, or album via Spotify API.  
+- **Audio Preview** — Listen before adding.  
+- **Instant Queueing** — Add tracks to a Spotify Premium account’s queue.  
+- **Animated Feedback** — Smooth UI/UX with visual confirmations.  
+- **History Panel** — See the last 5 tracks added.  
+- **Limit Protection** — Max 3 additions every 10 minutes per device.  
+- **One-click Reset** — Dedicated reset page.  
+- **Dark UI** — Responsive and optimized for mobile.  
 
-Before you start, ensure you have the following:
-- A web browser (Chrome, Firefox, Safari, or Edge).
-- An active internet connection.
-- A **Spotify Premium** account (required for adding tracks to the queue).
+---
 
-## Getting Started
+## 📦 Requirements
 
-1. **Download the Project Files**
-   - Download the files from the repository (e.g., from GitHub).
+- Spotify Premium account *(needed for queueing)*.  
+- Modern browser: Chrome, Firefox, Edge, Safari.  
+- Internet connection.  
+- Spotify **Access Token** with:
+  - `user-modify-playback-state`
+  - `user-read-playback-state`
 
-2. **Get a Spotify Access Token**
+---
 
-   To use this project, you need a Spotify access token. Follow these steps to create a Spotify app and obtain the token:
+## 🛠 Setup
 
-   - Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications) and log in with your Spotify account.
-   - Click on **Create an App** and fill in the required details (App Name, Description, etc.).
-   - Once the app is created, you will see the **Client ID** and **Client Secret** for your app.
-   - Navigate to the [Spotify Web API Authorization Guide](https://developer.spotify.com/documentation/web-api/tutorials/getting-started#request-an-access-token) and follow the instructions to request an access token using the **Client ID** and **Client Secret**.
-   - Make sure to use the **Authorization Code Flow** to get an access token that allows adding tracks to a Spotify Premium account's queue.
+### 1️⃣ Download Project
+```bash
+git clone https://github.com/yourusername/spotify-queue-manager.git
+```
+Or download the ZIP and extract it.
 
-3. **Configure the Spotify Token**
-   - Open the `script.js` file in a text editor.
-   - Paste your Spotify access token in the first line, where indicated.
-   - Save the changes.
+---
 
-4. **Upload the Project to Your Web Server**
-   - Upload the modified files to your web server.
-   - Alternatively, you can host the project using **GitHub Pages** by pushing the changes to a GitHub repository and enabling GitHub Pages in the repository settings.
+### 2️⃣ Get Your Spotify Access Token
+1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications) and log in.  
+2. Click on **Create an App** and fill the details.  
+3. Once created, note down the **Client ID** and **Client Secret**.  
+4. Follow the [Authorization Code Flow Guide](https://developer.spotify.com/documentation/web-api/tutorials/code-flow) to generate an access token.  
+5. Ensure it has the scopes:
+   ```
+   user-modify-playback-state
+   user-read-playback-state
+   ```
 
-5. **Open the Web Application**
-   - Once the files are hosted, visit the URL where the project is accessible.
+---
 
-6. **Search for Songs**
-   - Use the search bar on the main page to find the songs you want to add to the queue.
-   - Click on a song to add it to the queue.
+### 3️⃣ Configure the Spotify Token
+- Open `script.js`  
+- Paste your token into the `accessToken` variable.  
+- Save the file.
 
-## Troubleshooting
+---
 
-- **Issue: Error adding the track to the queue**
-  - Verify that the Spotify token is correctly set in `script.js`.
-  - Ensure that the track is available on Spotify and the account is Premium.
-  
-- **Issue: The token seems to be expired**
-  - Obtain a new Spotify token by following the steps above and update the first line of `script.js` with the new value.
+### 4️⃣ Launch the App
+- Open `index.html` in your browser *(local)*.  
+- Or upload to a web server/GitHub Pages for public use.  
 
-## Frequently Asked Questions (FAQ)
+---
 
-1. **Can users add songs without logging in?**
-   - Yes, users do not need to log in to add songs. They only need access to the web application.
+## 🖥 Usage
+1. Search for your track.  
+2. Preview it with the play button.  
+3. Add to queue instantly.  
+4. Track your additions in the **History** panel.  
 
-2. **Can the project be hosted on GitHub Pages?**
-   - Yes, the project can be hosted on **GitHub Pages**. Simply push the modified files to a GitHub repository and enable GitHub Pages.
+---
 
-3. **How do I reset the add limit?**
-   - The reset functionality is available through a separate page that can be accessed as needed.
+## 🧩 Troubleshooting
 
-4. **How can I contact support?**
-   - For technical issues, please reach out via [opensource-help@senioxtreme.it](mailto:opensource-help@senioxtreme.it). Please note that response times may not be immediate.
+- **Token expired** → Get a new one and replace in `script.js`.  
+- **No active devices** → Ensure Spotify is open and playing on at least one device.  
 
-## License
+---
 
-The project is licensed under the **GNU General Public License (GPL)**. See the LICENSE file for more details.
+## 📜 License
+Released under **GNU GPL v3** — Free to use and modify.
