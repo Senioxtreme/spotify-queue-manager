@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-U" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#121212" />
   <title>Spotify Song Queue</title>
@@ -29,9 +29,11 @@
 
     .searchbar{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:6px 10px;flex:1;min-width:200px}
     .searchbar input{flex:1;outline:none;border:none;background:transparent;color:#fafafa}
+    .searchbar input:disabled{cursor:not-allowed;color:var(--muted)}
 
     .btn{border:none;border-radius:12px;padding:8px 12px;background:linear-gradient(45deg,var(--brand),var(--brand-2));color:white;font-weight:700;cursor:pointer;transition:transform .15s ease;white-space:nowrap}
     .btn:hover{transform:translateY(-1px)}
+    .btn:disabled{cursor:not-allowed;background:#262626;color:var(--muted)}
     .btn.small{padding:6px 8px;border-radius:8px;font-size:12px;background:#262626;border:1px solid rgba(255,255,255,.08)}
     .btn.ghost{background:#1b1b1b;border:1px solid rgba(255,255,255,.08);color:#eaeaea}
 
@@ -106,9 +108,9 @@
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png" alt="Spotify" />
       </a>
       <div class="searchbar" role="search">
-        <input id="song-query" type="text" placeholder="Search songs, artists, albums…" autocomplete="off" aria-label="Search" />
+        <input id="song-query" type="text" placeholder="Search songs, artists, albums…" autocomplete="off" aria-label="Search" disabled />
       </div>
-      <button id="search-btn" class="btn">Search</button>
+      <button id="search-btn" class="btn" disabled>Search</button>
     </div>
   </header>
 
@@ -129,6 +131,30 @@
       </aside>
     </div>
   </main>
+
+  <!-- Modal Tutorial -->
+  <div id="tutorial-modal" class="modal" role="dialog" aria-label="Benvenuto!">
+    <div class="modal-card">
+      <div class="modal-head">
+        <!-- Titolo personalizzabile -->
+        <div class="modal-title">Benvenuto a [Nome Evento]!</div>
+      </div>
+      <div class="modal-body" style="padding: 15px; color: #b3b3b3; line-height: 1.6;">
+        <!-- Spiegazione personalizzabile -->
+        <p>Questa è la console per richiedere le tue canzoni preferite!</p>
+        <p><strong>Come funziona:</strong></p>
+        <ol style="padding-left: 20px;">
+          <li>Usa la barra di ricerca in alto per trovare un brano.</li>
+          <li>Clicca su "Add to queue" per aggiungerlo alla playlist.</li>
+          <li>Il tuo brano verrà messo in coda e suonato presto!</li>
+        </ol>
+        <p><strong>Limiti:</strong> Puoi aggiungere un massimo di 3 brani ogni 10 minuti per dare a tutti la possibilità di partecipare.</p>
+        <div style="text-align: center; margin-top: 20px;">
+          <button id="tutorial-close" class="btn">Ho capito, iniziamo!</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <footer>Developed by <a href="https://senioxtreme.it" target="_blank" rel="noreferrer noopener">Senioxtreme</a></footer>
 
@@ -391,6 +417,30 @@
       window.addEventListener('keydown',(e)=>{if(e.key==='/'&&document.activeElement!==q){e.preventDefault();q.focus();}if(e.key==='Enter'&&document.activeElement===q){triggerSearch();}});
 
       renderQueue();
+    })();
+  </script>
+
+  <script>
+    (function showTutorialOnFirstVisit() {
+      const tutorialModal = document.getElementById('tutorial-modal');
+      const closeButton = document.getElementById('tutorial-close');
+
+      // Controlla se l'utente ha già visto il tutorial
+      if (localStorage.getItem('hasSeenTutorial') === 'true') {
+        return; // Non fare nulla se l'ha già visto
+      }
+
+      // Se non l'ha visto, mostra il modale
+      tutorialModal.classList.add('show');
+      tutorialModal.setAttribute('aria-hidden', 'false');
+
+      // Quando l'utente clicca sul bottone di chiusura
+      closeButton.addEventListener('click', () => {
+        tutorialModal.classList.remove('show');
+        tutorialModal.setAttribute('aria-hidden', 'true');
+        // Salva nel localStorage che l'utente ha visto il tutorial
+        localStorage.setItem('hasSeenTutorial', 'true');
+      });
     })();
   </script>
 </body>
