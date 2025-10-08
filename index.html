@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-U" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#121212" />
   <title>Spotify Song Queue</title>
@@ -339,9 +339,17 @@
         showEmpty:()=>setState('empty'),
         showError:(msg)=>{error.textContent=msg||'Something went wrong.';setState('error');},
         showToast:(msg)=>showPopup(msg),
-        renderItems:(items)=>{
-          results.innerHTML='';setState('');
-          if(!items||!items.length){setState('empty');return;}
+        renderItems:(items, query)=>{
+          results.innerHTML='';
+          setState('');
+
+          if(!items || !items.length){
+            const errorDiv = document.getElementById('state-error');
+            errorDiv.textContent = `No results found for "${query || 'your search'}". Try another term.`;
+            setState('error');
+            return;
+          }
+          
           const frag=document.createDocumentFragment();
           items.slice(0,10).forEach((it)=>{
             const li=document.createElement('li');li.className='card';
