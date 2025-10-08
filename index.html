@@ -26,6 +26,14 @@
     .appbar-inner{display:flex;gap:10px;align-items:center;padding:8px 10px;flex-wrap:wrap}
     .brand{display:flex;align-items:center;gap:8px}
     .brand img{width:32px;height:32px;cursor:pointer}
+    
+    /* Stili per il widget Now Playing */
+    #now-playing-widget{display:none;align-items:center;gap:10px;margin-left:auto;background:rgba(255,255,255,.05);padding:4px 8px 4px 4px;border-radius:8px;overflow:hidden;max-width:300px}
+    #now-playing-widget.visible{display:flex}
+    #np-cover{width:32px;height:32px;border-radius:4px;object-fit:cover}
+    #np-info{display:flex;flex-direction:column;min-width:0}
+    #np-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #np-artists{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
     .searchbar{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:6px 10px;flex:1;min-width:200px}
     .searchbar input{flex:1;outline:none;border:none;background:transparent;color:#fafafa}
@@ -111,6 +119,15 @@
         <input id="song-query" type="text" placeholder="Search songs, artists, albums…" autocomplete="off" aria-label="Search" disabled />
       </div>
       <button id="search-btn" class="btn" disabled>Search</button>
+
+      <!-- Widget Now Playing -->
+      <div id="now-playing-widget">
+        <img id="np-cover" src="" alt="Album cover">
+        <div id="np-info">
+          <div id="np-title"></div>
+          <div id="np-artists"></div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -136,11 +153,9 @@
   <div id="tutorial-modal" class="modal" role="dialog" aria-label="Benvenuto!">
     <div class="modal-card">
       <div class="modal-head">
-        <!-- Titolo personalizzabile -->
         <div class="modal-title" id="event-title">Benvenuto!</div>
       </div>
       <div class="modal-body" style="padding: 15px; color: #b3b3b3; line-height: 1.6;">
-        <!-- Spiegazione personalizzabile -->
         <p>Questa è la console per richiedere le tue canzoni preferite!</p>
         <p><strong>Come funziona:</strong></p>
         <ol style="padding-left: 20px;">
@@ -432,21 +447,14 @@
     (function showTutorialOnFirstVisit() {
       const tutorialModal = document.getElementById('tutorial-modal');
       const closeButton = document.getElementById('tutorial-close');
-
-      // Controlla se l'utente ha già visto il tutorial
       if (localStorage.getItem('hasSeenTutorial') === 'true') {
-        return; // Non fare nulla se l'ha già visto
+        return;
       }
-
-      // Se non l'ha visto, mostra il modale
       tutorialModal.classList.add('show');
       tutorialModal.setAttribute('aria-hidden', 'false');
-
-      // Quando l'utente clicca sul bottone di chiusura
       closeButton.addEventListener('click', () => {
         tutorialModal.classList.remove('show');
         tutorialModal.setAttribute('aria-hidden', 'true');
-        // Salva nel localStorage che l'utente ha visto il tutorial
         localStorage.setItem('hasSeenTutorial', 'true');
       });
     })();
@@ -456,7 +464,7 @@
     (async function loadEventConfig() {
       try {
         const response = await fetch('/api/config');
-        if (!response.ok) return; // Se fallisce, non fa nulla e mantiene il testo di default
+        if (!response.ok) return;
         
         const config = await response.json();
         const titleElement = document.getElementById('event-title');
@@ -467,6 +475,47 @@
       } catch (error) {
         console.warn('Impossibile caricare la configurazione dell\'evento.', error);
       }
+    })();
+  </script>
+
+  <script>
+    (function nowPlayingPolling() {
+      const widget = document.getElementById('now-playing-widget');
+      const cover = document.getElementById('np-cover');
+      const title = document.getElementById('np-title');
+      const artists = document.getElementById('np-artists');
+      let currentTrackUri = null;
+
+      async function updateNowPlaying() {
+        try {
+          const response = await fetch('/api/player');
+          if (!response.ok) return;
+
+          const data = await response.json();
+
+          if (data.isPlaying && data.uri) {
+            // Ottimizzazione: aggiorna il DOM solo se la canzone è cambiata
+            if (data.uri !== currentTrackUri) {
+              cover.src = data.albumCover || '';
+              title.textContent = data.track;
+              artists.textContent = data.artists;
+              currentTrackUri = data.uri;
+            }
+            widget.classList.add('visible');
+          } else {
+            widget.classList.remove('visible');
+            currentTrackUri = null;
+          }
+        } catch (error) {
+          console.warn('Errore durante l\'aggiornamento di "Now Playing".', error);
+          widget.classList.remove('visible');
+          currentTrackUri = null;
+        }
+      }
+
+      // Esegui subito e poi ogni 15 secondi
+      updateNowPlaying();
+      setInterval(updateNowPlaying, 15000); 
     })();
   </script>
 </body>
