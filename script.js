@@ -1,4 +1,4 @@
-let accessToken = null; // Il token verrà caricato dinamicamente
+let accessToken = null; // caricato da env cloudflare pages
 
 const ADD_LIMIT = 3;
 const TIME_LIMIT_MINUTES = 10;
@@ -121,7 +121,7 @@ async function doSearch(query, limit = 10) {
       onclick: () => addToQueue(t?.uri)
     }));
 
-    window.UIBridge?.renderItems?.(items);
+    window.UIBridge?.renderItems?.(items, q);
 
   } catch (err) {
     if (err.name !== 'AbortError') {
@@ -139,7 +139,6 @@ document.addEventListener('ui:search', e => {
   doSearch(q, limit);
 });
 
-// Funzione per recuperare il token dalla nostra API Cloudflare
 async function fetchAccessToken() {
   try {
     const response = await fetch('/api/token');
@@ -152,7 +151,6 @@ async function fetchAccessToken() {
     if (data.accessToken) {
       accessToken = data.accessToken;
       console.log('Token caricato con successo.');
-      // Abilita la ricerca dopo aver ottenuto il token
       document.getElementById('song-query').disabled = false;
       document.getElementById('search-btn').disabled = false;
     } else {
@@ -161,7 +159,6 @@ async function fetchAccessToken() {
   } catch (err) {
     console.error(err);
     alert('ERRORE CRITICO: Impossibile caricare la configurazione. L\'app non funzionerà.');
-    // Lascia la ricerca disabilitata se il token non è stato caricato
     document.getElementById('song-query').placeholder = 'Errore di configurazione';
     window.UIBridge?.showError?.('Errore di configurazione del server. Contattare l\'organizzatore.');
   }
