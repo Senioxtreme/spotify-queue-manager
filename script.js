@@ -1,4 +1,4 @@
-let accessToken = 'spotify_token-here';
+let accessToken = null; // Il token verrà caricato dinamicamente
 
 const ADD_LIMIT = 3;
 const TIME_LIMIT_MINUTES = 10;
@@ -83,11 +83,8 @@ async function doSearch(query, limit = 10) {
     window.UIBridge?.showLoading?.();
 
     const tries = [
-
       `${API_BASE}/search?q=${encodeURIComponent(q)}&type=track&limit=${limit}&market=from_token`,
-
       `${API_BASE}/search?q=${encodeURIComponent(q)}&type=track&limit=${limit}`,
-
       `${API_BASE}/search?q=${encodeURIComponent(q)}&type=track&limit=${limit}&market=IT`
     ];
 
@@ -142,10 +139,35 @@ document.addEventListener('ui:search', e => {
   doSearch(q, limit);
 });
 
-window.addEventListener('load', () => {
-  if (!accessToken) {
-    alert('Error: No token entered in code. Manually enter token in accessToken variable.');
-  } else {
-    console.log('Ready. Token present.');
+// Funzione per recuperare il token dalla nostra API Cloudflare
+async function fetchAccessToken() {
+  try {
+    const response = await fetch('/api/token');
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error('Errore dal server token:', errBody);
+      throw new Error('Impossibile recuperare il token di accesso dal server.');
+    }
+    const data = await response.json();
+    if (data.accessToken) {
+      accessToken = data.accessToken;
+      console.log('Token caricato con successo.');
+      // Abilita la ricerca dopo aver ottenuto il token
+      document.getElementById('song-query').disabled = false;
+      document.getElementById('search-btn').disabled = false;
+    } else {
+      throw new Error('Il token ricevuto non è valido.');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('ERRORE CRITICO: Impossibile caricare la configurazione. L\'app non funzionerà.');
+    // Lascia la ricerca disabilitata se il token non è stato caricato
+    document.getElementById('song-query').placeholder = 'Errore di configurazione';
+    window.UIBridge?.showError?.('Errore di configurazione del server. Contattare l\'organizzatore.');
   }
+}
+
+window.addEventListener('load', () => {
+  // La ricerca è già disabilitata via HTML, la funzione fetchAccessToken la abiliterà
+  fetchAccessToken();
 });
