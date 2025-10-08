@@ -137,7 +137,7 @@
     <div class="modal-card">
       <div class="modal-head">
         <!-- Titolo personalizzabile -->
-        <div class="modal-title">Benvenuto a [Nome Evento]!</div>
+        <div class="modal-title" id="event-title">Benvenuto!</div>
       </div>
       <div class="modal-body" style="padding: 15px; color: #b3b3b3; line-height: 1.6;">
         <!-- Spiegazione personalizzabile -->
@@ -449,6 +449,24 @@
         // Salva nel localStorage che l'utente ha visto il tutorial
         localStorage.setItem('hasSeenTutorial', 'true');
       });
+    })();
+  </script>
+
+  <script>
+    (async function loadEventConfig() {
+      try {
+        const response = await fetch('/api/config');
+        if (!response.ok) return; // Se fallisce, non fa nulla e mantiene il testo di default
+        
+        const config = await response.json();
+        const titleElement = document.getElementById('event-title');
+
+        if (titleElement && config.eventName) {
+          titleElement.textContent = `Benvenuto a ${config.eventName}!`;
+        }
+      } catch (error) {
+        console.warn('Impossibile caricare la configurazione dell\'evento.', error);
+      }
     })();
   </script>
 </body>
