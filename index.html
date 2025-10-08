@@ -27,14 +27,6 @@
     .brand{display:flex;align-items:center;gap:8px}
     .brand img{width:32px;height:32px;cursor:pointer}
     
-    /* Stili per il widget Now Playing */
-    #now-playing-widget{display:none;align-items:center;gap:10px;margin-left:auto;background:rgba(255,255,255,.05);padding:4px 8px 4px 4px;border-radius:8px;overflow:hidden;max-width:300px}
-    #now-playing-widget.visible{display:flex}
-    #np-cover{width:32px;height:32px;border-radius:4px;object-fit:cover}
-    #np-info{display:flex;flex-direction:column;min-width:0}
-    #np-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    #np-artists{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
     .searchbar{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:6px 10px;flex:1;min-width:200px}
     .searchbar input{flex:1;outline:none;border:none;background:transparent;color:#fafafa}
     .searchbar input:disabled{cursor:not-allowed;color:var(--muted)}
@@ -71,7 +63,21 @@
     #results.list .info{padding:0 8px;min-width:0}
     #results.list .row{margin-left:auto;padding:0}
 
-    .panel{background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:10px;position:sticky;top:72px;max-height:calc(100vh - 100px);overflow:auto}
+    /* Stili per Pannello Laterale con Tab */
+    .panel{background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:10px;position:sticky;top:72px;max-height:calc(100vh - 100px);overflow-y:auto}
+    .panel-tabs{display:flex;gap:4px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:12px}
+    .tab-btn{background:transparent;border:none;color:var(--muted);padding:8px 12px;border-radius:8px 8px 0 0;cursor:pointer;font-weight:700;font-size:14px;border-bottom:2px solid transparent}
+    .tab-btn.active{color:#fff;border-bottom-color:var(--brand)}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    
+    #now-playing-card{background:rgba(0,0,0,.15);border-radius:12px;padding:12px;text-align:center;display:none}
+    #now-playing-card.visible{display:block}
+    #np-cover-main{width:100%;aspect-ratio:1/1;border-radius:8px;object-fit:cover;margin-bottom:10px}
+    #np-title-main{font-size:16px;font-weight:800}
+    #np-artists-main{font-size:13px;color:var(--muted);margin-top:2px}
+    #np-idle{padding:40px 10px;color:var(--muted);text-align:center}
+
     .panel .panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
     .panel h2{margin:0;font-size:15px}
     .q-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
@@ -119,15 +125,6 @@
         <input id="song-query" type="text" placeholder="Search songs, artists, albums…" autocomplete="off" aria-label="Search" disabled />
       </div>
       <button id="search-btn" class="btn" disabled>Search</button>
-
-      <!-- Widget Now Playing -->
-      <div id="now-playing-widget">
-        <img id="np-cover" src="" alt="Album cover">
-        <div id="np-info">
-          <div id="np-title"></div>
-          <div id="np-artists"></div>
-        </div>
-      </div>
     </div>
   </header>
 
@@ -139,12 +136,36 @@
         <div id="state-error" class="state">Something went wrong. Try again.</div>
         <ul id="results" class="grid" aria-label="Search results"></ul>
       </section>
+
+      <!-- Pannello Laterale Ristrutturato con Tabs -->
       <aside class="panel">
-        <div class="panel-head">
-          <h2>History <span id="hist-count" style="color:var(--muted);font-weight:500"></span></h2>
-          <button id="clear-history" class="btn small ghost" title="Clear history">Clear</button>
+        <div class="panel-tabs">
+          <button id="tab-btn-playing" class="tab-btn active" data-tab="playing">Now Playing</button>
+          <button id="tab-btn-history" class="tab-btn" data-tab="history">History</button>
         </div>
-        <ul id="user-queue" class="q-list" aria-live="polite" aria-label="Last 5 added"></ul>
+
+        <!-- Contenuto Tab "Now Playing" -->
+        <div id="tab-content-playing" class="tab-content active">
+          <div id="now-playing-card">
+            <img id="np-cover-main" src="" alt="Album cover">
+            <div id="np-info-main">
+              <div id="np-title-main"></div>
+              <div id="np-artists-main"></div>
+            </div>
+          </div>
+          <div id="np-idle">
+            Nothing is currently playing.
+          </div>
+        </div>
+
+        <!-- Contenuto Tab "History" -->
+        <div id="tab-content-history" class="tab-content">
+          <div class="panel-head">
+            <h2>Last Added <span id="hist-count" style="color:var(--muted);font-weight:500"></span></h2>
+            <button id="clear-history" class="btn small ghost" title="Clear history">Clear</button>
+          </div>
+          <ul id="user-queue" class="q-list" aria-live="polite" aria-label="Last 5 added"></ul>
+        </div>
       </aside>
     </div>
   </main>
@@ -479,11 +500,36 @@
   </script>
 
   <script>
+    (function handleSidebarTabs() {
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+
+      tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const tabName = button.dataset.tab;
+
+          tabButtons.forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+
+          tabContents.forEach(content => {
+            if (content.id === `tab-content-${tabName}`) {
+              content.classList.add('active');
+            } else {
+              content.classList.remove('active');
+            }
+          });
+        });
+      });
+    })();
+  </script>
+
+  <script>
     (function nowPlayingPolling() {
-      const widget = document.getElementById('now-playing-widget');
-      const cover = document.getElementById('np-cover');
-      const title = document.getElementById('np-title');
-      const artists = document.getElementById('np-artists');
+      const card = document.getElementById('now-playing-card');
+      const idleMessage = document.getElementById('np-idle');
+      const cover = document.getElementById('np-cover-main');
+      const title = document.getElementById('np-title-main');
+      const artists = document.getElementById('np-artists-main');
       let currentTrackUri = null;
 
       async function updateNowPlaying() {
@@ -494,26 +540,28 @@
           const data = await response.json();
 
           if (data.isPlaying && data.uri) {
-            // Ottimizzazione: aggiorna il DOM solo se la canzone è cambiata
+            idleMessage.style.display = 'none';
+            card.classList.add('visible');
+            
             if (data.uri !== currentTrackUri) {
               cover.src = data.albumCover || '';
               title.textContent = data.track;
               artists.textContent = data.artists;
               currentTrackUri = data.uri;
             }
-            widget.classList.add('visible');
           } else {
-            widget.classList.remove('visible');
+            card.classList.remove('visible');
+            idleMessage.style.display = 'block';
             currentTrackUri = null;
           }
         } catch (error) {
           console.warn('Errore durante l\'aggiornamento di "Now Playing".', error);
-          widget.classList.remove('visible');
+          card.classList.remove('visible');
+          idleMessage.style.display = 'block';
           currentTrackUri = null;
         }
       }
 
-      // Esegui subito e poi ogni 15 secondi
       updateNowPlaying();
       setInterval(updateNowPlaying, 15000); 
     })();
