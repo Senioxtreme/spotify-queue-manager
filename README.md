@@ -34,7 +34,6 @@ Setup is straightforward and takes about 15 minutes. Once deployed, the applicat
 -   A **Spotify Premium** account (required for queueing).
 -   A **Cloudflare** account.
 -   A **GitHub** account.
--   An **hCaptcha** account (free, for the reset page).
 -   **Python 3.x** installed locally (for initial setup only).
 
 ### Step 1: Configure the Spotify Developer App
@@ -72,11 +71,7 @@ This one-time script uses Python to get a long-lived `refresh_token`.
     | `MAINTENANCE`            | Set to `TRUE` to enable maintenance mode.                          | optional |
 
 5.  **Save** the variables and click **"Save and Deploy"**.
-
-### Step 4: Final Configuration
-
-1.  **hCaptcha**: Open `reset.html`, find the `h-captcha` div, and replace `"YOUR_HCAPTCHA_SITE_KEY_HERE"` with your actual hCaptcha Sitekey. Commit and push this change to your repository.
-2.  **Done!** Your application is live at the URL provided by Cloudflare.
+6.  **Done!** Your application is live at the URL provided by Cloudflare.
 
 ## 🖥️ Usage
 
