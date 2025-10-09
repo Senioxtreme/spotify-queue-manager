@@ -6,82 +6,89 @@
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=Cloudflare&logoColor=white)]()
 [![Spotify API](https://img.shields.io/badge/Spotify-1ED760?style=for-the-badge&logo=spotify&logoColor=white)]()
 
-The ultimate self-hosted solution for creating a collaborative Spotify jukebox for your events, parties, or get-togethers. Allow anyone to search and queue songs easily and safely, right from their phone.
+The ultimate self-hosted solution for creating a collaborative Spotify jukebox for your events. This app allows guests to search for songs, preview them, and add them to a live Spotify queue, all from a sleek, mobile-friendly web interface.
+
+Built with a serverless architecture on Cloudflare Pages, it's secure, infinitely scalable, and completely free to host.
 
 ---
 
-## 🚀 Key Features
+## ✨ Key Features
 
--   **Instant Track Search**: Find any song, artist, or album available on Spotify.
--   **Audio Previews**: Listen to a 30-second preview before adding a track.
--   **Shared Playback Queue**: Add tracks directly to an active Spotify Premium account's queue.
--   **Automatic Token Management**: Powered by a **Refresh Token**, the system generates new access tokens autonomously. **No expiration, no maintenance required!**
--   **Real-time 'Now Playing' Tab**: Shows everyone the currently playing song, complete with album art and details.
--   **Addition History**: Keep track of the last few tracks added through the app.
--   **Event Customization**: Set a custom event name that appears in the welcome message.
--   **Anti-Spam Protection**: Limits the number of additions per user to ensure a balanced playlist.
--   **Modern & Responsive UI**: A sleek, dark interface optimized for a flawless mobile experience.
--   **Serverless Deployment**: Designed to be hosted for free and securely on **Cloudflare Pages**.
+-   **Automatic Token Management**: "Set it and forget it." Uses a **Refresh Token** to autonomously generate new access tokens, eliminating the need for any maintenance during an event.
+-   **Live Queue & Now Playing**: Features a real-time sidebar with tabs showing the **currently playing song** and the **actual upcoming track queue** from Spotify, keeping everyone engaged.
+-   **Duplicate Prevention**: Intelligently prevents users from adding a song that is already in the queue or currently playing.
+-   **Consent-Driven Analytics**: Integrates with **Google Analytics** and asks for user consent via a two-step welcome modal, ensuring privacy compliance.
+-   **Robust Search & Previews**: Instantly search Spotify's entire library and listen to 30-second audio previews before queueing.
+-   **Full Admin Control**:
+    -   **Maintenance Mode**: Easily take the site offline with a single environment variable, redirecting all traffic to a maintenance page.
+    -   **Protected Rate-Limit Reset**: A dedicated `/reset.html` page, secured by **hCaptcha**, allows users to reset their local anti-spam limits.
+-   **Event Customization**: Centrally manage your event's name and branding through environment variables.
+-   **Modern UI/UX**: A polished dark-mode interface with smooth animations, toast notifications, and confetti effects for a premium user experience.
 
 ## 🛠️ Setup and Deployment
 
-Setup is straightforward and takes about 10 minutes. The system is designed to be "set it and forget it."
+Setup is straightforward and takes about 15 minutes. Once deployed, the application is fully autonomous.
 
 ### Prerequisites
 
--   A **Spotify Premium** account (required to use the queue feature).
+-   A **Spotify Premium** account (required for queueing).
 -   A **Cloudflare** account.
--   **Python 3.x** installed on your computer (only needed for the initial setup).
+-   A **GitHub** account.
+-   An **hCaptcha** account (free, for the reset page).
+-   **Python 3.x** installed locally (for initial setup only).
 
 ### Step 1: Configure the Spotify Developer App
 
 1.  Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/) and log in.
-2.  Click on **"Create app"**.
-3.  Give it a name (e.g., "My Event Jukebox") and a description.
-4.  Once created, copy your **Client ID** and **Client Secret**. Keep them handy.
-5.  Click on **"Edit settings"**.
-6.  In the **"Redirect URIs"** field, add **exactly** this line: `http://localhost:8888/callback`
-7.  Save the changes.
+2.  Click **"Create app"** and give it a name and description.
+3.  Copy your **Client ID** and **Client Secret**.
+4.  Click **"Edit settings"** and add the following **Redirect URI**: `http://localhost:8888/callback`
+5.  Save the changes.
 
 ### Step 2: Get the Refresh Token
 
-We'll use the provided Python script to authenticate once and get a long-lasting `refresh_token`.
+This one-time script uses Python to get a long-lived `refresh_token`.
 
-1.  Open the `get_token.py` file.
-2.  Paste your **Client ID** and **Client Secret** into the `CLIENT_ID` and `CLIENT_SECRET` variables.
-3.  Install the required dependency by opening a terminal and running: `pip install spotipy`
-4.  Run the script: `python get_token.py`
-5.  Your browser will open. Log in to Spotify and authorize the application.
-6.  ✅ When done, a `spotify_refresh_token.txt` file will be created. Copy the long string inside it.
+1.  Open `get_token.py` and paste in your **Client ID** and **Client Secret**.
+2.  In your terminal, install the required library: `pip install spotipy`
+3.  Run the script: `python get_token.py`
+4.  Your browser will open. Log in and authorize the app.
+5.  ✅ A `spotify_refresh_token.txt` file will be created. Copy the long string inside it.
 
 ### Step 3: Deploy on Cloudflare Pages
 
-1.  Fork this repository or clone it to your own GitHub account.
-2.  Log in to your Cloudflare dashboard and go to **Workers & Pages**.
-3.  Create a new **Pages** application and connect it to the GitHub repository you just created.
-4.  Cloudflare will automatically detect the correct build settings. Proceed with the setup.
-5.  Before the final deploy, go to **Settings -> Environment variables** and add the following variables (for both "Production" and "Preview"):
-    -   `SPOTIFY_CLIENT_ID`: Your Client ID from Spotify.
-    -   `SPOTIFY_CLIENT_SECRET`: Your Client Secret from Spotify.
-    -   `SPOTIFY_REFRESH_TOKEN`: The refresh token you copied from the `.txt` file in Step 2.
-    -   `EVENT_NAME`: The name of your event (e.g., `End of Year Party`).
-6.  Save the variables and click **"Save and Deploy"**.
+1.  Fork this repository to your own GitHub account.
+2.  On the Cloudflare dashboard, go to **Workers & Pages** -> **Create application** -> **Pages** -> **Connect to Git**.
+3.  Select your forked repository. Cloudflare will auto-detect the correct build settings.
+4.  Go to **Settings -> Environment variables** and add the following variables for both **Production** and **Preview**:
 
-### Step 4: Done!
+    | Variable Name            | Value                                                              | Required |
+    | ------------------------ | ------------------------------------------------------------------ | -------- |
+    | `SPOTIFY_CLIENT_ID`      | Your Client ID from Spotify.                                       | ✅ Yes     |
+    | `SPOTIFY_CLIENT_SECRET`  | Your Client Secret from Spotify.                                   | ✅ Yes     |
+    | `SPOTIFY_REFRESH_TOKEN`  | The refresh token you generated in Step 2.                         | ✅ Yes     |
+    | `EVENT_NAME`             | The name of your event (e.g., `Oktoberfuego`).                     | optional |
+    | `GOOGLE_ANALYTICS_ID`    | Your Google Analytics Measurement ID (e.g., `G-XXXXXXXXXX`).       | optional |
+    | `MAINTENANCE`            | Set to `TRUE` to enable maintenance mode.                          | optional |
 
-Your application is now live at the URL provided by Cloudflare, fully functional and autonomous!
+5.  **Save** the variables and click **"Save and Deploy"**.
+
+### Step 4: Final Configuration
+
+1.  **hCaptcha**: Open `reset.html`, find the `h-captcha` div, and replace `"YOUR_HCAPTCHA_SITE_KEY_HERE"` with your actual hCaptcha Sitekey. Commit and push this change to your repository.
+2.  **Done!** Your application is live at the URL provided by Cloudflare.
 
 ## 🖥️ Usage
 
-1.  Share the Cloudflare URL with your guests.
-2.  Make sure your Spotify account is active and playing music on a device (e.g., a smart speaker).
-3.  Guests can search for tracks, listen to previews, and add them to the queue.
-4.  Everyone can see what's currently playing in the "Now Playing" tab.
+-   **Share the Link**: Give the Cloudflare URL to your guests.
+-   **Start the Music**: Make sure your Spotify account is active and playing music on a device.
+-   **Maintenance**: To take the site offline, set the `MAINTENANCE` variable to `TRUE` in Cloudflare and redeploy.
 
 ## 🧩 Troubleshooting
 
 -   **"No active devices"**: Ensure Spotify is open and playing music on at least one device linked to the Premium account.
--   **"500 Errors or App Fails to Load"**: Double-check that the environment variable names and values were entered correctly in the Cloudflare dashboard, with no extra spaces.
+-   **"500 Errors or App Fails to Load"**: Double-check that all **Required** environment variables are set correctly in the Cloudflare dashboard, with no extra spaces.
+-   **"Error 1019" or "TOO_MANY_REDIRECTS"**: Ensure your `functions/_middleware.js` file is up-to-date with the latest version from this repository.
 
 ## 📜 License
 
