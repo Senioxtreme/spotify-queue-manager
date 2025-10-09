@@ -1,4 +1,4 @@
-let accessToken = null; // caricato da env cloudflare pages
+let accessToken = null;
 
 const ADD_LIMIT = 3;
 const TIME_LIMIT_MINUTES = 10;
@@ -10,15 +10,14 @@ const headersAuth = () => ({
   'Content-Type': 'application/json'
 });
 
-const toast = (msg) => alert(msg);
-
 function canAddTrack() {
   const now = Date.now();
   const hist = JSON.parse(localStorage.getItem('addHistory')) || [];
   const recent = hist.filter(ts => now - ts < TIME_LIMIT_MINUTES * 60 * 1000);
   if (recent.length >= ADD_LIMIT) {
     const minutesLeft = Math.ceil((TIME_LIMIT_MINUTES * 60 * 1000 - (now - recent[0])) / (60 * 1000));
-    alert(`Hey, slow down! You can add another song in ${minutesLeft} minutes.`);
+    const message = `Limite raggiunto! Potrai aggiungere un'altra canzone tra ${minutesLeft} minuti.`;
+    window.UIBridge?.showToast?.(message);
     return false;
   }
   return true;
@@ -35,8 +34,8 @@ window.canAddTrack = canAddTrack;
 window.saveTrackAddition = saveTrackAddition;
 
 async function addToQueue(trackUri) {
-  if (!accessToken) { toast('Error: No token available to add the song.'); return false; }
-  if (!trackUri)    { toast('Error: invalid track.'); return false; }
+  if (!accessToken) { window.UIBridge?.showToast?.('Errore: Token non disponibile.'); return false; }
+  if (!trackUri)    { window.UIBridge?.showToast?.('Errore: Traccia non valida.'); return false; }
 
   try {
     const res = await fetch(`${API_BASE}/me/player/queue?uri=${encodeURIComponent(trackUri)}`, {
@@ -45,23 +44,22 @@ async function addToQueue(trackUri) {
     });
 
     if (res.ok) {
-      toast('Hands up! Your song will be played soon!');
+      window.UIBridge?.showToast?.('Aggiunto! Il tuo brano verrà suonato a breve!');
       return true;
     }
 
-    if (res.status === 404) { toast('No active devices, please make sure at least one device is playing content.'); return false; }
-    if (res.status === 401) { toast('Token expired or invalid. Please refresh your token.'); return false; }
-    if (res.status === 429) { toast('Spotify rate limit hit. Try again in a bit.'); return false; }
-    if (res.status === 403) { toast('Permission denied. Check scopes.'); return false; }
+    if (res.status === 404) { window.UIBridge?.showToast?.('Nessun dispositivo attivo. Assicurati che Spotify stia suonando.'); return false; }
+    if (res.status === 401) { window.UIBridge?.showToast?.('Token scaduto o non valido.'); return false; }
+    if (res.status === 429) { window.UIBridge?.showToast?.('Limite richieste Spotify raggiunto. Riprova tra poco.'); return false; }
+    if (res.status === 403) { window.UIBridge?.showToast?.('Permesso negato.'); return false; }
 
-    const txt = await res.text().catch(()=> '');
-    console.error('Queue error:', res.status, res.statusText, txt);
-    toast('Could not add to queue. Try again.');
+    console.error('Errore Coda:', res.status, await res.text().catch(()=>''));
+    window.UIBridge?.showToast?.('Impossibile aggiungere alla coda. Riprova.');
     return false;
 
   } catch (err) {
-    console.error('Error adding the track to the queue:', err);
-    toast('Network error adding the track. Try again.');
+    console.error('Errore di rete nell\'aggiunta:', err);
+    window.UIBridge?.showToast?.('Errore di rete. Riprova.');
     return false;
   }
 }
@@ -71,9 +69,9 @@ window.addToQueue = addToQueue;
 let searchAbort;
 
 async function doSearch(query, limit = 10) {
-  if (!accessToken) { toast('There was a problem. Please make sure you entered the token correctly.'); return; }
+  if (!accessToken) { window.UIBridge?.showToast?.('Problema di configurazione. Token non trovato.'); return; }
   const q = (query || '').trim();
-  if (!q) { toast('Please enter a valid search term.'); return; }
+  if (!q) { window.UIBridge?.showToast?.('Inserisci un termine di ricerca valido.'); return; }
 
   try {
     if (searchAbort) searchAbort.abort();
@@ -92,44 +90,41 @@ async function doSearch(query, limit = 10) {
     let lastErr = null;
 
     for (const url of tries) {
-      const res = await fetch(url, { headers: headersAuth(), signal });
-      if (res.ok) {
-        data = await res.json();
-        break;
-      } else {
-        const bodyText = await res.text().catch(()=> '');
-        lastErr = { status: res.status, statusText: res.statusText, bodyText };
-        if (res.status === 401) break;
+      try {
+        const res = await fetch(url, { headers: headersAuth(), signal });
+        if (res.ok) {
+          data = await res.json();
+          break;
+        } else {
+          lastErr = { status: res.status, body: await res.text().catch(()=>'') };
+          if (res.status === 401) break;
+        }
+      } catch (loopErr) {
+        lastErr = { status: 'NETWORK_ERROR', body: loopErr.message };
       }
     }
-
+    
     if (!data) {
-      if (lastErr) {
-        console.error('Search failed:', lastErr.status, lastErr.statusText, lastErr.bodyText);
-      }
-      toast('Song search error. Make sure the token is valid.');
-      window.UIBridge?.showError?.('Song search error. Try again.');
-      return;
+        console.error('Errore Ricerca Finale:', lastErr);
+        window.UIBridge?.showError?.('Errore nella ricerca. Assicurati che il token sia valido.');
+        return;
     }
 
     const items = (data?.tracks?.items || []).map(t => ({
       image:   t?.album?.images?.[0]?.url || '',
-      title:   t?.name || 'Unknown title',
-      subtitle:(t?.artists || []).map(a => a?.name).filter(Boolean).join(', ') || 'Unknown artist',
+      title:   t?.name || 'Titolo Sconosciuto',
+      subtitle:(t?.artists || []).map(a => a?.name).filter(Boolean).join(', ') || 'Artista Sconosciuto',
       uri:     t?.uri || '',
       preview: t?.preview_url || null,
-      onclick: () => addToQueue(t?.uri)
     }));
 
     window.UIBridge?.renderItems?.(items, q);
 
   } catch (err) {
     if (err.name !== 'AbortError') {
-      console.error('Song search error:', err);
-      toast('Search failed. Please try again.');
-      window.UIBridge?.showError?.('Search failed. Please try again.');
+      console.error('Errore Ricerca:', err);
+      window.UIBridge?.showError?.('Ricerca fallita. Riprova.');
     }
-  } finally {
   }
 }
 
@@ -142,29 +137,24 @@ document.addEventListener('ui:search', e => {
 async function fetchAccessToken() {
   try {
     const response = await fetch('/api/token');
-    if (!response.ok) {
-      const errBody = await response.text();
-      console.error('Errore dal server token:', errBody);
-      throw new Error('Impossibile recuperare il token di accesso dal server.');
-    }
+    if (!response.ok) throw new Error('Impossibile recuperare il token dal server.');
+    
     const data = await response.json();
     if (data.accessToken) {
       accessToken = data.accessToken;
-      console.log('Token caricato con successo.');
+      console.log('Token caricato.');
       document.getElementById('song-query').disabled = false;
       document.getElementById('search-btn').disabled = false;
     } else {
-      throw new Error('Il token ricevuto non è valido.');
+      throw new Error('Token ricevuto non valido.');
     }
   } catch (err) {
     console.error(err);
-    alert('ERRORE CRITICO: Impossibile caricare la configurazione. L\'app non funzionerà.');
+    window.UIBridge?.showError?.('ERRORE CRITICO: Impossibile caricare la configurazione. L\'app non funzionerà.');
     document.getElementById('song-query').placeholder = 'Errore di configurazione';
-    window.UIBridge?.showError?.('Errore di configurazione del server. Contattare l\'organizzatore.');
   }
 }
 
 window.addEventListener('load', () => {
-  // La ricerca è già disabilitata via HTML, la funzione fetchAccessToken la abiliterà
   fetchAccessToken();
 });

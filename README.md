@@ -19,9 +19,7 @@ Built with a serverless architecture on Cloudflare Pages, it's secure, infinitel
 -   **Duplicate Prevention**: Intelligently prevents users from adding a song that is already in the queue or currently playing.
 -   **Consent-Driven Analytics**: Integrates with **Google Analytics** and asks for user consent via a two-step welcome modal, ensuring privacy compliance.
 -   **Robust Search & Previews**: Instantly search Spotify's entire library and listen to 30-second audio previews before queueing.
--   **Full Admin Control**:
-    -   **Maintenance Mode**: Easily take the site offline with a single environment variable, redirecting all traffic to a maintenance page.
-    -   **Protected Rate-Limit Reset**: A dedicated `/reset.html` page, secured by **hCaptcha**, allows users to reset their local anti-spam limits.
+-   **Maintenance Mode**: Easily take the site offline with a single environment variable, redirecting all traffic to a maintenance page.
 -   **Event Customization**: Centrally manage your event's name and branding through environment variables.
 -   **Modern UI/UX**: A polished dark-mode interface with smooth animations, toast notifications, and confetti effects for a premium user experience.
 
