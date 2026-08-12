@@ -46,7 +46,15 @@ async function doSearch(query, limit = 10) {
     const response = await fetch(`${API}/search?q=${encodeURIComponent(q)}&limit=${limit}`, { signal: searchAbort.signal, headers: { Accept: 'application/json' } });
     const data = await response.json();
     if (!response.ok) throw new Error(data?.error || 'Ricerca non disponibile.');
-    window.UIBridge?.renderItems?.(data.items || [], q);
+    // Keep the API model independent from the legacy UI model.
+    const items = (data.items || []).map(track => ({
+      image: track.albumCover || '',
+      title: track.track || 'Traccia sconosciuta',
+      subtitle: track.artists || 'Artista sconosciuto',
+      uri: track.uri || '',
+      preview: track.preview || null,
+    }));
+    window.UIBridge?.renderItems?.(items, q);
   } catch (error) {
     if (error.name !== 'AbortError') { console.error('search:', error); window.UIBridge?.showError?.(error.message); }
   }

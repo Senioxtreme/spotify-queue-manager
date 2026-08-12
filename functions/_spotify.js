@@ -51,6 +51,7 @@ export function trackFromSpotify(item) {
     track: item.name || 'Traccia sconosciuta',
     artists: (item.artists || []).map(a => a.name).filter(Boolean).join(', '),
     albumCover: item.album?.images?.[0]?.url || '',
+    preview: item.preview_url || null,
     durationMs: item.duration_ms || 0,
   } : null;
 }
