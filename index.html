@@ -122,7 +122,7 @@
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png" alt="Spotify Queue Manager" />
       </a>
       <div class="searchbar" role="search">
-        <input id="song-query" type="text" placeholder="Cerca brani, artisti, album…" autocomplete="off" aria-label="Search" disabled />
+        <input id="song-query" type="search" placeholder="Cerca brani, artisti, album…" autocomplete="off" aria-label="Cerca brani" />
       </div>
       <button id="search-btn" class="btn" disabled>Cerca</button>
     </div>
@@ -204,12 +204,12 @@
     </div>
   </div>
 
-  <footer>Sviluppato da <a href="https://senioxtreme.it" target="_blank" rel="noreferrer noopener">Senioxtreme</a></footer>
+  <footer>Sviluppato da <a href="https://senioxtreme.it" target="_blank" rel="noreferrer noopener">Senioxtreme</a> · <a href="/admin.html">Area organizzatore</a></footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"><span class="icon">✓</span><span id="toast-text"></span></div>
   <canvas id="confetti" class="confetti"></canvas>
 
-  <div id="embed-modal" class="modal" aria-hidden="true" role="dialog" aria-label="Track preview">
+  <div id="embed-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Anteprima traccia">
     <div class="modal-card">
       <div class="modal-head">
         <div class="modal-title">Anteprima Traccia</div>
@@ -251,7 +251,7 @@
 
   <script>
     const ext=document.createElement('script');
-    ext.src='script.js?v='+Date.now();
+    ext.src='script.js';
     document.head.appendChild(ext);
   </script>
 
@@ -273,6 +273,9 @@
       const modal = document.getElementById('embed-modal');
       const embedFrame = document.getElementById('embed-frame');
       const embedClose = document.getElementById('embed-close');
+
+      const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const safeImage = (value) => /^https:\/\//i.test(String(value || '')) ? escapeHtml(value) : '';
       
       window.nowPlayingUri = null;
       window.queueUris = [];
@@ -322,7 +325,7 @@
         const frag=document.createDocumentFragment();
         last5.forEach((t)=>{
           const li=document.createElement('li'); li.className='q-item';
-          li.innerHTML = `${t.img?`<img src="${t.img}" alt="">`:''}<div style="min-width:0"><div class="qi-title">${t.title||''}</div><div class="qi-sub">${t.subtitle||''}</div></div>`;
+          li.innerHTML = `${safeImage(t.img)?`<img src="${safeImage(t.img)}" alt="">`:''}<div style="min-width:0"><div class="qi-title">${escapeHtml(t.title)}</div><div class="qi-sub">${escapeHtml(t.subtitle)}</div></div>`;
           frag.appendChild(li);
         });
         userQueue.appendChild(frag);
@@ -381,7 +384,7 @@
           const frag=document.createDocumentFragment();
           items.slice(0,10).forEach((it)=>{
             const li=document.createElement('li');li.className='card';
-            li.innerHTML=`<div class="cover">${it.image?`<img src="${it.image}" alt="">`:''}</div><div class="info"><div class="title">${it.title||''}</div><div class="meta">${it.subtitle||''}</div></div><div class="row"><button class="btn small ghost" data-act="preview">Anteprima</button><button class="btn small" data-act="queue">Aggiungi alla coda</button></div>`;
+            li.innerHTML=`<div class="cover">${safeImage(it.image)?`<img src="${safeImage(it.image)}" alt="Copertina di ${escapeHtml(it.title)}" loading="lazy">`:''}</div><div class="info"><div class="title">${escapeHtml(it.title)}</div><div class="meta">${escapeHtml(it.subtitle)}</div></div><div class="row"><button class="btn small ghost" data-act="preview">Anteprima</button><button class="btn small" data-act="queue">Aggiungi alla coda</button></div>`;
             li.querySelector('[data-act="preview"]').addEventListener('click', ()=> togglePreview(li.querySelector('[data-act="preview"]'), it.preview, it.uri));
             
             li.querySelector('[data-act="queue"]').addEventListener('click', async (e)=>{
@@ -445,7 +448,7 @@
       const refuseBtn = document.getElementById('ga-refuse-btn');
       
       function initializeGoogleAnalytics(gaId) {
-        if (!gaId) return;
+        if (!/^G-[A-Z0-9]+$/i.test(gaId || '')) return;
         console.log(`Analytics-Consenso dato. Caricamento GA con ID: ${gaId}`);
         const script1 = document.createElement('script');
         script1.async = true;
@@ -557,20 +560,22 @@
       const queueList = document.getElementById('real-queue-list');
       const queueIdle = document.getElementById('queue-idle');
 
+      let updating = false;
       async function updateData() {
+        if (updating || document.hidden) return;
+        updating = true;
         try {
-          const playerResponse = await fetch('/api/player');
-          const queueResponse = await fetch('/api/queue');
+          const [playerResponse, queueResponse] = await Promise.all([fetch('/api/player'), fetch('/api/queue')]);
           if (!playerResponse.ok || !queueResponse.ok) return;
 
           const playerData = await playerResponse.json();
           const queueData = await queueResponse.json();
           
-          if (playerData.isPlaying && playerData.uri) {
+          if (playerData.isPlaying && playerData.track?.uri) {
             npIdle.style.display = 'none'; npCard.classList.add('visible');
-            if (window.nowPlayingUri !== playerData.uri) {
-              npCover.src = playerData.albumCover || ''; npTitle.textContent = playerData.track;
-              npArtists.textContent = playerData.artists; window.nowPlayingUri = playerData.uri;
+            if (window.nowPlayingUri !== playerData.track.uri) {
+              npCover.src = playerData.track.albumCover || ''; npTitle.textContent = playerData.track.track;
+              npArtists.textContent = playerData.track.artists; window.nowPlayingUri = playerData.track.uri;
             }
           } else {
             npCard.classList.remove('visible'); npIdle.style.display = 'block'; window.nowPlayingUri = null;
@@ -584,7 +589,7 @@
             queueList.innerHTML = ''; const frag = document.createDocumentFragment();
             queueItems.slice(0, 10).forEach(t => {
                 const li = document.createElement('li'); li.className = 'q-item';
-                li.innerHTML = `${t.albumCover?`<img src="${t.albumCover}" alt="">`:''}<div style="min-width:0"><div class="qi-title">${t.track||''}</div><div class="qi-sub">${t.artists||''}</div></div>`;
+                li.innerHTML = `${safeImage(t.albumCover)?`<img src="${safeImage(t.albumCover)}" alt="">`:''}<div style="min-width:0"><div class="qi-title">${escapeHtml(t.track)}</div><div class="qi-sub">${escapeHtml(t.artists)}</div></div>`;
                 frag.appendChild(li);
             });
             queueList.appendChild(frag);
@@ -595,10 +600,12 @@
           console.warn('Errore aggiornamento dati.', error);
           npCard.classList.remove('visible'); npIdle.style.display = 'block'; window.nowPlayingUri = null;
           queueList.style.display = 'none'; queueIdle.style.display = 'block'; window.queueUris = [];
+        } finally { updating = false;
         }
       }
       updateData();
-      setInterval(updateData, 15000); 
+      setInterval(updateData, 15000);
+      document.addEventListener('visibilitychange', updateData);
     })();
   </script>
 </body>

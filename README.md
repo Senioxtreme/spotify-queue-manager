@@ -14,12 +14,13 @@ Built with a serverless architecture on Cloudflare Pages, it's secure, infinitel
 
 ## ✨ Key Features
 
--   **Automatic Token Management**: "Set it and forget it." Uses a **Refresh Token** to autonomously generate new access tokens, eliminating the need for any maintenance during an event.
+-   **Automatic Token Management**: The refresh token remains server-side and access tokens are cached by the Cloudflare Functions layer.
 -   **Live Queue & Now Playing**: Features a real-time sidebar with tabs showing the **currently playing song** and the **actual upcoming track queue** from Spotify, keeping everyone engaged.
 -   **Duplicate Prevention**: Intelligently prevents users from adding a song that is already in the queue or currently playing.
 -   **Consent-Driven Analytics**: Integrates with **Google Analytics** and asks for user consent via a two-step welcome modal, ensuring privacy compliance.
 -   **Robust Search & Previews**: Instantly search Spotify's entire library and listen to 30-second audio previews before queueing.
 -   **Maintenance Mode**: Easily take the site offline with a single environment variable, redirecting all traffic to a maintenance page.
+-   **Organizer Panel**: A separate admin dashboard at `/admin.html`, protected by `ADMIN_PASSWORD`, provides playback controls and queue visibility. Guests do not need a PIN.
 -   **Event Customization**: Centrally manage your event's name and branding through environment variables.
 -   **Modern UI/UX**: A polished dark-mode interface with smooth animations, toast notifications, and confetti effects for a premium user experience.
 

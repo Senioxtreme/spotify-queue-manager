@@ -1,14 +1,8 @@
-export async function onRequestGet(context) {
-  const eventName = context.env.EVENT_NAME || "Il Nostro Fantastico Evento";
-  const googleAnalyticsId = context.env.GOOGLE_ANALYTICS_ID || null;
-
-  const config = {
-    eventName: eventName,
-    googleAnalyticsId: googleAnalyticsId,
-  };
-
-  return new Response(JSON.stringify(config), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
+import { json } from '../_http.js';
+export function onRequestGet({ env }) {
+  return json({
+    eventName: env.EVENT_NAME || 'Il Nostro Fantastico Evento',
+    googleAnalyticsId: env.GOOGLE_ANALYTICS_ID || null,
+    adminEnabled: Boolean(env.ADMIN_PASSWORD),
   });
 }

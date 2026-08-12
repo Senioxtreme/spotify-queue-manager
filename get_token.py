@@ -3,13 +3,14 @@ import webbrowser
 import http.server
 import socketserver
 import threading
+from urllib.parse import parse_qs, urlparse
 
 CLIENT_ID = ""
 CLIENT_SECRET = ""
 
-REDIRECT_URI = "http://localhost:8888/callback"
+REDIRECT_URI = "http://127.0.0.1:8888/callback"
 
-SCOPE = "user-modify-playback-state"
+SCOPE = "user-modify-playback-state user-read-playback-state"
 
 OUTPUT_FILENAME = "spotify_refresh_token.txt"
 
@@ -19,12 +20,14 @@ class SpotifyAuthHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         global refresh_token_obtained
         
-        if self.path.startswith("/callback?code="):
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        if parsed.path == "/callback" and params.get("code"):
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
             
-            auth_code = self.path.split("=")[1].split("&")[0]
+            auth_code = params["code"][0]
             
             try:
                 token_info = sp_oauth.get_access_token(auth_code, check_cache=False)
@@ -53,7 +56,7 @@ class SpotifyAuthHandler(http.server.SimpleHTTPRequestHandler):
             threading.Thread(target=self.server.shutdown).start()
 
 if __name__ == "__main__":
-    if CLIENT_ID == "IL_TUO_CLIENT_ID" or CLIENT_SECRET == "IL_TUO_CLIENT_SECRET":
+    if not CLIENT_ID or not CLIENT_SECRET:
         print("🚨 ERRORE: Per favore, inserisci il tuo CLIENT_ID e CLIENT_SECRET nello script.")
     else:
         sp_oauth = spotipy.oauth2.SpotifyOAuth(
@@ -70,7 +73,7 @@ if __name__ == "__main__":
         webbrowser.open(auth_url)
 
         PORT = 8888
-        with socketserver.TCPServer(("", PORT), SpotifyAuthHandler) as httpd:
+        with socketserver.TCPServer(("127.0.0.1", PORT), SpotifyAuthHandler) as httpd:
             print(f"In attesa di autorizzazione su http://localhost:{PORT}/callback ...")
             httpd.serve_forever()
         
