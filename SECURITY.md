@@ -1,32 +1,42 @@
-# Security
+# Security Policy
 
-## Vulnerability Reporting
+## Supported versions
 
-If you discover a security vulnerability in the project, we encourage you to report it to ensure the safety and integrity of our code and users. Please follow these steps to report a vulnerability:
+Security fixes are applied to the latest version on the default branch. Deployments should track a reviewed commit or release rather than relying on an unpinned moving branch in production.
 
-1. **Do not create public issues on GitHub**: Do not report vulnerabilities publicly via the issue section. Please use one of the channels listed below.
-2. **Send an email to**: [security@senioxtreme.it](mailto:security@senioxtreme.it) with the following information:
-    - A detailed description of the vulnerability.
-    - Steps to reproduce the issue (if possible).
-    - Potential implications and risks.
-    - Any additional information that could help in resolving the vulnerability.
+## Reporting a vulnerability
 
-## Reporting Guidelines
+Please do not disclose security vulnerabilities through public GitHub issues.
 
-- We prefer reports in Italian or English.
-- We will aim to respond within 5 business days.
-- We will work with you to better understand the issue and implement an appropriate solution.
+Send a report to [security@senioxtreme.it](mailto:security@senioxtreme.it) with the subject `[SECURITY] Spotify Queue Manager`.
 
-## Vulnerability Resolution
+Include, where possible:
 
-Once the vulnerability is verified:
+- a concise description of the issue;
+- affected files, endpoints, versions, or deployments;
+- reproducible steps or a proof of concept;
+- the security impact and realistic attack scenario;
+- any relevant logs, screenshots, or suggested mitigations.
 
-1. We will schedule and implement a fix.
-2. We will notify the reporter when the vulnerability has been resolved.
-3. We will release, if necessary, a software update and/or an official communication through our channels.
+Please avoid including live Spotify client secrets, refresh tokens, admin passwords, or other credentials. Redact them before sending a report.
 
-## Responsible Disclosure Policy
+## Response process
 
-We appreciate the help of community members and security experts in keeping the project secure. We will not take legal action against those who report vulnerabilities, provided the report is made in good faith, the vulnerability is not exploited, and the details are not disclosed without our consent.
+We aim to acknowledge reports within five business days. After triage, we will investigate the impact, coordinate a fix, and communicate remediation or mitigation steps to the reporter when appropriate.
 
-Thank you for your support and cooperation!
+For critical issues involving exposed credentials, include the affected environment and rotate the credentials immediately if you are authorized to do so.
+
+## Responsible disclosure
+
+Good-faith security research is welcome. Do not access, modify, delete, or retain data that does not belong to you; do not degrade availability; and stop testing after confirming the issue. We ask researchers to allow reasonable time for remediation before public disclosure.
+
+## Security boundaries
+
+The following are generally configuration or operational issues rather than vulnerabilities in this repository:
+
+- leaked credentials that were committed or configured by a deployment owner;
+- insecure Cloudflare account or repository permissions;
+- behavior imposed by Spotify API availability, account eligibility, or policy;
+- denial-of-service testing against a public deployment without prior authorization.
+
+These issues can still be reported privately when they expose a concrete risk.

@@ -1,89 +1,154 @@
-# 🎵 Spotify Event Queue Manager
+# Spotify Event Queue Manager
 
-[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)]()
-[![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)]()
-[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)]()
-[![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=Cloudflare&logoColor=white)]()
-[![Spotify API](https://img.shields.io/badge/Spotify-1ED760?style=for-the-badge&logo=spotify&logoColor=white)]()
+Self-hosted web application for collaborative Spotify queue management at live events. Guests can search the Spotify catalog, preview tracks, and submit requests. The organizer can monitor playback and control the active Spotify device from a protected administration panel.
 
-The ultimate self-hosted solution for creating a collaborative Spotify jukebox for your events. This app allows guests to search for songs, preview them, and add them to a live Spotify queue, all from a sleek, mobile-friendly web interface.
+The project is designed for Cloudflare Pages and Cloudflare Pages Functions. Spotify credentials remain server-side; the public client never receives a Spotify access token.
 
-Built with a serverless architecture on Cloudflare Pages, it's secure, infinitely scalable, and completely free to host.
+## Features
 
----
+- Spotify track search with album artwork and preview support when available.
+- Public, mobile-first request interface with duplicate prevention.
+- Live “now playing” and queue views with periodic updates.
+- Server-side request throttling and URI validation.
+- Organizer dashboard at `/admin.html`.
+- Admin controls for play, pause, and skip to next track.
+- Maintenance mode through an environment variable.
+- Optional, consent-based Google Analytics integration.
+- Security headers and server-side Spotify token caching.
 
-## ✨ Key Features
+## Architecture
 
--   **Automatic Token Management**: The refresh token remains server-side and access tokens are cached by the Cloudflare Functions layer.
--   **Live Queue & Now Playing**: Features a real-time sidebar with tabs showing the **currently playing song** and the **actual upcoming track queue** from Spotify, keeping everyone engaged.
--   **Duplicate Prevention**: Intelligently prevents users from adding a song that is already in the queue or currently playing.
--   **Consent-Driven Analytics**: Integrates with **Google Analytics** and asks for user consent via a two-step welcome modal, ensuring privacy compliance.
--   **Robust Search & Previews**: Instantly search Spotify's entire library and listen to 30-second audio previews before queueing.
--   **Maintenance Mode**: Easily take the site offline with a single environment variable, redirecting all traffic to a maintenance page.
--   **Organizer Panel**: A separate admin dashboard at `/admin.html`, protected by `ADMIN_PASSWORD`, provides playback controls and queue visibility. Guests do not need a PIN.
--   **Event Customization**: Centrally manage your event's name and branding through environment variables.
--   **Modern UI/UX**: A polished dark-mode interface with smooth animations, toast notifications, and confetti effects for a premium user experience.
+The application has no client-side build step. Static assets are served by Cloudflare Pages; the `functions/` directory contains the API layer.
 
-## 🛠️ Setup and Deployment
+```text
+index.html              Public event interface
+admin.html              Organizer dashboard
+script.js               Public client logic
+functions/api/search.js Spotify catalog search
+functions/api/add.js   Validated queue insertion
+functions/api/player.js
+functions/api/queue.js  Playback and queue state
+functions/api/admin/*   Authenticated organizer endpoints
+functions/_spotify.js   Spotify authentication and API helpers
+functions/_middleware.js Security headers and maintenance mode
+```
 
-Setup is straightforward and takes about 15 minutes. Once deployed, the application is fully autonomous.
+The Spotify refresh token is used only by the Functions runtime. The deprecated `/api/token` endpoint is intentionally unavailable.
 
-### Prerequisites
+## Requirements
 
--   A **Spotify Premium** account (required for queueing).
--   A **Cloudflare** account.
--   A **GitHub** account.
--   **Python 3.x** installed locally (for initial setup only).
+- A Spotify Premium account with an active playback device.
+- A Spotify Developer application.
+- A Cloudflare account with Pages enabled.
+- Python 3.x for the one-time refresh-token setup.
 
-### Step 1: Configure the Spotify Developer App
+The Spotify application must use this redirect URI:
 
-1.  Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/) and log in.
-2.  Click **"Create app"** and give it a name and description.
-3.  Copy your **Client ID** and **Client Secret**.
-4.  Click **"Edit settings"** and add the following **Redirect URI**: `http://localhost:8888/callback`
-5.  Save the changes.
+```text
+http://localhost:8888/callback
+```
 
-### Step 2: Get the Refresh Token
+The authorization scopes required by the application are:
 
-This one-time script uses Python to get a long-lived `refresh_token`.
+```text
+user-modify-playback-state user-read-playback-state
+```
 
-1.  Open `get_token.py` and paste in your **Client ID** and **Client Secret**.
-2.  In your terminal, install the required library: `pip install spotipy`
-3.  Run the script: `python get_token.py`
-4.  Your browser will open. Log in and authorize the app.
-5.  ✅ A `spotify_refresh_token.txt` file will be created. Copy the long string inside it.
+## Configuration
 
-### Step 3: Deploy on Cloudflare Pages
+Configure the following variables in Cloudflare Pages for the required deployment environments.
 
-1.  Fork this repository to your own GitHub account.
-2.  On the Cloudflare dashboard, go to **Workers & Pages** -> **Create application** -> **Pages** -> **Connect to Git**.
-3.  Select your forked repository. Cloudflare will auto-detect the correct build settings.
-4.  Go to **Settings -> Environment variables** and add the following variables for both **Production** and **Preview**:
+| Variable | Required | Description |
+| --- | --- | --- |
+| `SPOTIFY_CLIENT_ID` | Yes | Spotify application client ID. |
+| `SPOTIFY_CLIENT_SECRET` | Yes | Spotify application client secret. |
+| `SPOTIFY_REFRESH_TOKEN` | Yes | Refresh token generated by `get_token.py`. |
+| `ADMIN_PASSWORD` | Recommended | Password for `/admin.html`. Use a long, unique value. |
+| `SPOTIFY_MARKET` | No | ISO 3166-1 alpha-2 market code, for example `IT`. Defaults to `IT`. |
+| `EVENT_NAME` | No | Event name displayed in the welcome flow. |
+| `GOOGLE_ANALYTICS_ID` | No | Google Analytics measurement ID. Loaded only after consent. |
+| `MAINTENANCE` | No | Set to `TRUE` to serve the maintenance page with HTTP 503. |
 
-    | Variable Name            | Value                                                              | Required |
-    | ------------------------ | ------------------------------------------------------------------ | -------- |
-    | `SPOTIFY_CLIENT_ID`      | Your Client ID from Spotify.                                       | ✅ Yes     |
-    | `SPOTIFY_CLIENT_SECRET`  | Your Client Secret from Spotify.                                   | ✅ Yes     |
-    | `SPOTIFY_REFRESH_TOKEN`  | The refresh token you generated in Step 2.                         | ✅ Yes     |
-    | `EVENT_NAME`             | The name of your event (e.g., `Oktoberfuego`).                     | optional |
-    | `GOOGLE_ANALYTICS_ID`    | Your Google Analytics Measurement ID (e.g., `G-XXXXXXXXXX`).       | optional |
-    | `MAINTENANCE`            | Set to `TRUE` to enable maintenance mode.                          | optional |
+## Setup
 
-5.  **Save** the variables and click **"Save and Deploy"**.
-6.  **Done!** Your application is live at the URL provided by Cloudflare.
+### 1. Generate the refresh token
 
-## 🖥️ Usage
+Insert the Spotify client ID and secret in `get_token.py`, then run:
 
--   **Share the Link**: Give the Cloudflare URL to your guests.
--   **Start the Music**: Make sure your Spotify account is active and playing music on a device.
--   **Maintenance**: To take the site offline, set the `MAINTENANCE` variable to `TRUE` in Cloudflare and redeploy.
+```bash
+python -m pip install spotipy
+python get_token.py
+```
 
-## 🧩 Troubleshooting
+The script writes `spotify_refresh_token.txt`. This file is ignored by Git and must never be committed. If the application scopes change, revoke the previous Spotify authorization and generate a new refresh token.
 
--   **"No active devices"**: Ensure Spotify is open and playing music on at least one device linked to the Premium account.
--   **"500 Errors or App Fails to Load"**: Double-check that all **Required** environment variables are set correctly in the Cloudflare dashboard, with no extra spaces.
--   **"Error 1019" or "TOO_MANY_REDIRECTS"**: Ensure your `functions/_middleware.js` file is up-to-date with the latest version from this repository.
+### 2. Deploy to Cloudflare Pages
 
-## 📜 License
+Connect the repository to Cloudflare Pages with the following settings:
 
-Released under the **GNU GPL v3** license — feel free to use, modify, and distribute it.
+- Framework preset: none
+- Build command: leave empty
+- Build output directory: `/`
+
+Add the environment variables listed above, then deploy. Cloudflare detects the `functions/` directory automatically.
+
+### 3. Configure the organizer panel
+
+Set `ADMIN_PASSWORD` and open:
+
+```text
+/admin.html
+```
+
+Guests do not need a PIN or account. The administrator session uses a signed, `HttpOnly`, `Secure`, `SameSite=Strict` cookie and expires after eight hours.
+
+## Local development
+
+Install Wrangler if it is not already available, then build the Pages Functions bundle:
+
+```bash
+npx wrangler@3.114.17 pages functions build
+```
+
+For a full local Pages runtime, use Wrangler Pages development mode with the required environment variables configured locally. Do not place production secrets in tracked files.
+
+Before submitting changes, run:
+
+```bash
+node --check script.js
+node --check functions/api/search.js
+npx wrangler@3.114.17 pages functions build
+git diff --check
+```
+
+## Operational limitations
+
+Spotify exposes endpoints to read the queue and add tracks, but not to remove an arbitrary item already queued. The admin panel therefore supports playback controls and queue inspection; it cannot provide a genuine per-track removal operation through the official API.
+
+The in-memory request limiter is effective per runtime instance. Production deployments with high traffic should also configure Cloudflare Rate Limiting or a shared Durable Object/KV-backed counter.
+
+## Troubleshooting
+
+### Search or queue returns HTTP 403
+
+Generate a new refresh token with both required scopes and update `SPOTIFY_REFRESH_TOKEN` in Cloudflare Pages. Also verify that the Spotify account is authorized for the Developer application and that `SPOTIFY_MARKET` is a valid two-letter country code.
+
+### No active device
+
+Start playback in the Spotify client and ensure the account is Premium. Spotify playback endpoints require an active, controllable device.
+
+### Admin login fails
+
+Verify `ADMIN_PASSWORD` is configured in the same Cloudflare environment as the deployed site. Use a fresh browser session after changing it.
+
+### Maintenance mode remains active
+
+`MAINTENANCE` is case-sensitive. Set it to anything other than `TRUE` and redeploy, or wait for the new deployment to become active.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for the vulnerability-reporting policy and responsible-disclosure process.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
