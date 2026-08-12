@@ -28,8 +28,9 @@
     .brand img{width:32px;height:32px;cursor:pointer}
     .brand-mark{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--brand);color:#07140b;font-size:22px;font-weight:900;line-height:1}
     
-    .searchbar{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:6px 10px;flex:1;min-width:200px}
-    .searchbar input{flex:1;outline:none;border:none;background:transparent;color:#fafafa}
+    .search-form{display:flex;gap:8px;align-items:center;flex:1;min-width:0}
+    .searchbar{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:6px 10px;flex:1;min-width:0;overflow:hidden}
+    .searchbar input{flex:1;min-width:0;width:100%;outline:none;border:none;background:transparent;color:#fafafa}
     .searchbar input:disabled{cursor:not-allowed;color:var(--muted)}
 
     .btn{border:none;border-radius:12px;padding:8px 12px;background:linear-gradient(45deg,var(--brand),var(--brand-2));color:white;font-weight:700;cursor:pointer;transition:transform .15s ease;white-space:nowrap}
@@ -114,6 +115,10 @@
 
     footer{margin-top:auto;padding:12px;text-align:center;color:#b3b3b3;font-size:12px}
     footer a{color:var(--brand);text-decoration:none}
+    .live-indicator{display:inline-flex;align-items:center;gap:5px;color:var(--brand);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+    .live-indicator::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:live-pulse 1.8s infinite}
+    @keyframes live-pulse{70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
+    @media (max-width:520px){.appbar-inner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.brand{grid-column:1/-1}.search-form{width:100%;grid-column:1/-1}.searchbar{width:100%;padding-inline:10px}.searchbar input{font-size:16px}#search-btn{padding-inline:13px}}
   </style>
 </head>
 <body>
@@ -122,10 +127,12 @@
       <a class="brand" id="home-link" href="#" aria-label="Home">
         <span class="brand-mark" role="img" aria-label="Spotify Queue Manager">♫</span>
       </a>
-      <div class="searchbar" role="search">
-        <input id="song-query" type="search" placeholder="Cerca brani, artisti, album…" autocomplete="off" aria-label="Cerca brani" />
-      </div>
-      <button id="search-btn" class="btn" disabled>Cerca</button>
+      <form id="search-form" class="search-form" role="search">
+        <div class="searchbar">
+          <input id="song-query" type="search" placeholder="Cerca brani, artisti, album…" autocomplete="off" aria-label="Cerca brani" />
+        </div>
+        <button id="search-btn" class="btn" type="submit">Cerca</button>
+      </form>
     </div>
   </header>
 
@@ -140,8 +147,8 @@
 
       <aside class="panel">
         <div class="panel-tabs">
-          <button class="tab-btn active" data-tab="playing">Ora</button>
-          <button class="tab-btn" data-tab="queue">A breve</button>
+          <button class="tab-btn active" data-tab="playing">Ora <span class="live-indicator">Live</span></button>
+          <button class="tab-btn" data-tab="queue">A breve <span class="live-indicator">Live</span></button>
           <button class="tab-btn" data-tab="history">Aggiunte da te</button>
         </div>
 
@@ -260,6 +267,7 @@
     (function(){
       const q=document.getElementById('song-query');
       const searchBtn=document.getElementById('search-btn');
+      const searchForm=document.getElementById('search-form');
       const results=document.getElementById('results');
       const empty=document.getElementById('state-empty');
       const loading=document.getElementById('state-loading');
@@ -339,7 +347,7 @@
 
       function stopPreview(){
         try{ audio.pause(); audio.currentTime=0; }catch{}
-        if(currentPreviewBtn){ currentPreviewBtn.textContent='Anteprima'; currentPreviewBtn.dataset.playing='false'; currentPreviewBtn=null; }
+        if(currentPreviewBtn){ currentPreviewBtn.textContent='Anteprima'; currentPreviewBtn.dataset.playing='false'; currentPreviewBtn.setAttribute('aria-pressed','false'); currentPreviewBtn=null; }
       }
       
       function openEmbedForUri(uri){
@@ -361,10 +369,10 @@
           stopPreview();
           audio.src = url;
           audio.play().then(() => {
-            btn.textContent = 'Stop'; btn.dataset.playing = 'true'; currentPreviewBtn = btn;
+            btn.textContent = 'Stop'; btn.dataset.playing = 'true'; btn.setAttribute('aria-pressed','true'); currentPreviewBtn = btn;
           }).catch(() => showPopup('Impossibile riprodurre l\'anteprima. Controlla i permessi audio.'));
         } else {
-          openEmbedForUri(uri);
+          showPopup('Anteprima non disponibile per questa traccia.');
         }
       }
       audio.addEventListener('ended', stopPreview);
@@ -385,7 +393,7 @@
           const frag=document.createDocumentFragment();
           items.slice(0,10).forEach((it)=>{
             const li=document.createElement('li');li.className='card';
-            li.innerHTML=`<div class="cover">${safeImage(it.image)?`<img src="${safeImage(it.image)}" alt="Copertina di ${escapeHtml(it.title)}" loading="lazy">`:''}</div><div class="info"><div class="title">${escapeHtml(it.title)}</div><div class="meta">${escapeHtml(it.subtitle)}</div></div><div class="row"><button class="btn small ghost" data-act="preview">Anteprima</button><button class="btn small" data-act="queue">Aggiungi alla coda</button></div>`;
+            li.innerHTML=`<div class="cover">${safeImage(it.image)?`<img src="${safeImage(it.image)}" alt="Copertina di ${escapeHtml(it.title)}" loading="lazy">`:''}</div><div class="info"><div class="title">${escapeHtml(it.title)}</div><div class="meta">${escapeHtml(it.subtitle)}</div></div><div class="row"><button class="btn small ghost" data-act="preview" aria-pressed="false">Anteprima</button><button class="btn small" data-act="queue">Aggiungi alla coda</button></div>`;
             li.querySelector('[data-act="preview"]').addEventListener('click', ()=> togglePreview(li.querySelector('[data-act="preview"]'), it.preview, it.uri));
             
             li.querySelector('[data-act="queue"]').addEventListener('click', async (e)=>{
@@ -416,6 +424,7 @@
               li.classList.add('added'); setTimeout(()=>li.classList.remove('added'),800);
               showPopup('Aggiunto: '+(it.title||''));
               fireConfetti();
+              window.dispatchEvent(new CustomEvent('queue:changed'));
               results.innerHTML=''; q.value=''; setState('empty'); window.scrollTo({top:0,behavior:'smooth'});
             });
             frag.appendChild(li);
@@ -431,7 +440,7 @@
         const term=q.value.trim(); if(!term){showPopup('Inserisci un termine di ricerca valido.'); return;}
         setState('loading'); document.dispatchEvent(new CustomEvent('ui:search',{detail:{query:term,limit:10}}));
       }
-      searchBtn.addEventListener('click',triggerSearch);
+      searchForm.addEventListener('submit',(e)=>{e.preventDefault();triggerSearch();});
       window.addEventListener('keydown',(e)=>{if(e.key==='/'&&document.activeElement!==q){e.preventDefault();q.focus();}if(e.key==='Enter'&&document.activeElement===q){triggerSearch();}});
 
       renderQueue();
@@ -568,7 +577,11 @@
         if (updating || document.hidden) return;
         updating = true;
         try {
-          const [playerResponse, queueResponse] = await Promise.all([fetch('/api/player'), fetch('/api/queue')]);
+          const cacheBust = `?t=${Date.now()}`;
+          const [playerResponse, queueResponse] = await Promise.all([
+            fetch(`/api/player${cacheBust}`, { cache: 'no-store' }),
+            fetch(`/api/queue${cacheBust}`, { cache: 'no-store' })
+          ]);
           if (!playerResponse.ok || !queueResponse.ok) {
             const scopeMessage = playerResponse.status === 403 || queueResponse.status === 403
               ? 'Collega nuovamente Spotify con lo scope di lettura della riproduzione.'
@@ -616,7 +629,8 @@
         }
       }
       updateData();
-      setInterval(updateData, 15000);
+      window.addEventListener('queue:changed', updateData);
+      setInterval(updateData, 5000);
       document.addEventListener('visibilitychange', updateData);
     })();
   </script>
