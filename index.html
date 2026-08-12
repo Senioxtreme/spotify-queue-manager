@@ -566,7 +566,15 @@
         updating = true;
         try {
           const [playerResponse, queueResponse] = await Promise.all([fetch('/api/player'), fetch('/api/queue')]);
-          if (!playerResponse.ok || !queueResponse.ok) return;
+          if (!playerResponse.ok || !queueResponse.ok) {
+            const scopeMessage = playerResponse.status === 403 || queueResponse.status === 403
+              ? 'Collega nuovamente Spotify con lo scope di lettura della riproduzione.'
+              : 'Stato Spotify momentaneamente non disponibile.';
+            npCard.classList.remove('visible'); npIdle.style.display = 'block'; npIdle.textContent = scopeMessage;
+            queueList.style.display = 'none'; queueIdle.style.display = 'block'; queueIdle.textContent = scopeMessage;
+            window.nowPlayingUri = null; window.queueUris = [];
+            return;
+          }
 
           const playerData = await playerResponse.json();
           const queueData = await queueResponse.json();
@@ -578,7 +586,7 @@
               npArtists.textContent = playerData.track.artists; window.nowPlayingUri = playerData.track.uri;
             }
           } else {
-            npCard.classList.remove('visible'); npIdle.style.display = 'block'; window.nowPlayingUri = null;
+            npCard.classList.remove('visible'); npIdle.style.display = 'block'; npIdle.textContent = 'Nessun brano in riproduzione.'; window.nowPlayingUri = null;
           }
 
           const queueItems = queueData.queue || [];
@@ -594,12 +602,12 @@
             });
             queueList.appendChild(frag);
           } else {
-            queueList.style.display = 'none'; queueIdle.style.display = 'block';
+            queueList.style.display = 'none'; queueIdle.style.display = 'block'; queueIdle.textContent = 'La coda di riproduzione è vuota.';
           }
         } catch (error) {
           console.warn('Errore aggiornamento dati.', error);
-          npCard.classList.remove('visible'); npIdle.style.display = 'block'; window.nowPlayingUri = null;
-          queueList.style.display = 'none'; queueIdle.style.display = 'block'; window.queueUris = [];
+          npCard.classList.remove('visible'); npIdle.style.display = 'block'; npIdle.textContent = 'Stato Spotify momentaneamente non disponibile.'; window.nowPlayingUri = null;
+          queueList.style.display = 'none'; queueIdle.style.display = 'block'; queueIdle.textContent = 'Stato Spotify momentaneamente non disponibile.'; window.queueUris = [];
         } finally { updating = false;
         }
       }

@@ -30,10 +30,16 @@ export async function spotifyFetch(env, path, options = {}) {
   return response;
 }
 
-export function spotifyError(response) {
+export async function spotifyError(response) {
+  let providerMessage = '';
+  try {
+    const body = await response.clone().json();
+    providerMessage = body?.error?.message || body?.error_description || body?.message || '';
+  } catch {}
+  if (providerMessage) console.error(`Spotify ${response.status}:`, providerMessage);
   if (response.status === 204) return { status: 204, error: null };
   if (response.status === 401) return { status: 502, error: 'Sessione Spotify scaduta o non autorizzata.' };
-  if (response.status === 403) return { status: 403, error: 'Spotify ha negato questa operazione.' };
+  if (response.status === 403) return { status: 403, error: 'Spotify ha negato questa operazione. Verifica gli scope OAuth e che l’account sia autorizzato nell’app Spotify.' };
   if (response.status === 404) return { status: 409, error: 'Nessun dispositivo Spotify attivo.' };
   if (response.status === 429) return { status: 429, error: 'Spotify sta limitando le richieste. Riprova tra poco.' };
   return { status: 502, error: 'Spotify non è momentaneamente disponibile.' };
@@ -51,4 +57,9 @@ export function trackFromSpotify(item) {
 
 export function validTrackUri(uri) {
   return typeof uri === 'string' && /^spotify:track:[A-Za-z0-9]{22}$/.test(uri);
+}
+
+export function marketFor(env) {
+  const market = String(env.SPOTIFY_MARKET || 'IT').toUpperCase();
+  return /^[A-Z]{2}$/.test(market) ? market : 'IT';
 }

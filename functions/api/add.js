@@ -35,7 +35,7 @@ export async function onRequestPost({ request, env }) {
       if ((existing.queue || []).some(item => item.uri === uri)) return json({ error: 'Il brano è già in coda.' }, 409);
     }
     const response = await spotifyFetch(env, `/me/player/queue?${new URLSearchParams({ uri })}`, { method: 'POST' });
-    if (!response.ok && response.status !== 204) { const e = spotifyError(response); return json({ error: e.error }, e.status); }
+    if (!response.ok && response.status !== 204) { const e = await spotifyError(response); return json({ error: e.error }, e.status); }
     return json({ ok: true }, 201);
   } catch (error) {
     console.error('add:', error.message);

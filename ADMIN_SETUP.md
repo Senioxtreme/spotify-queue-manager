@@ -15,3 +15,5 @@ Per rigenerare il refresh token Spotify, autorizza l’app con questi scope:
 ```text
 user-modify-playback-state user-read-playback-state
 ```
+
+Facoltativamente puoi configurare `SPOTIFY_MARKET` con un codice paese ISO a due lettere, ad esempio `IT`. Se assente, viene usato `IT`.
