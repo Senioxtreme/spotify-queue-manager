@@ -26,6 +26,7 @@
     .appbar-inner{display:flex;gap:10px;align-items:center;padding:8px 10px;flex-wrap:wrap}
     .brand{display:flex;align-items:center;gap:8px}
     .brand img{width:32px;height:32px;cursor:pointer}
+    .brand-mark{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--brand);color:#07140b;font-size:22px;font-weight:900;line-height:1}
     
     .searchbar{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:6px 10px;flex:1;min-width:200px}
     .searchbar input{flex:1;outline:none;border:none;background:transparent;color:#fafafa}
@@ -119,7 +120,7 @@
   <header class="appbar">
     <div class="appbar-inner container">
       <a class="brand" id="home-link" href="#" aria-label="Home">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png" alt="Spotify Queue Manager" />
+        <span class="brand-mark" role="img" aria-label="Spotify Queue Manager">♫</span>
       </a>
       <div class="searchbar" role="search">
         <input id="song-query" type="search" placeholder="Cerca brani, artisti, album…" autocomplete="off" aria-label="Cerca brani" />
@@ -216,7 +217,7 @@
         <button id="embed-close" class="modal-close">Chiudi</button>
       </div>
       <div class="modal-body" style="padding:0">
-        <iframe id="embed-frame" style="border:none;width:100%;height:152px" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        <iframe id="embed-frame" style="border:none;width:100%;height:152px" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
       </div>
     </div>
   </div>
@@ -559,6 +560,8 @@
       
       const queueList = document.getElementById('real-queue-list');
       const queueIdle = document.getElementById('queue-idle');
+      const escapeQueueText = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const safeQueueImage = (value) => /^https:\/\//i.test(String(value || '')) ? String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) : '';
 
       let updating = false;
       async function updateData() {
@@ -597,7 +600,8 @@
             queueList.innerHTML = ''; const frag = document.createDocumentFragment();
             queueItems.slice(0, 10).forEach(t => {
                 const li = document.createElement('li'); li.className = 'q-item';
-                li.innerHTML = `${safeImage(t.albumCover)?`<img src="${safeImage(t.albumCover)}" alt="">`:''}<div style="min-width:0"><div class="qi-title">${escapeHtml(t.track)}</div><div class="qi-sub">${escapeHtml(t.artists)}</div></div>`;
+                const image = safeQueueImage(t.albumCover);
+                li.innerHTML = `${image?`<img src="${image}" alt="" loading="lazy">`:''}<div style="min-width:0"><div class="qi-title">${escapeQueueText(t.track)}</div><div class="qi-sub">${escapeQueueText(t.artists)}</div></div>`;
                 frag.appendChild(li);
             });
             queueList.appendChild(frag);
